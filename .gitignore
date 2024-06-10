@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+
+**/vcpkg_installed
