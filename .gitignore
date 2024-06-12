@@ -32,3 +32,5 @@
 *.app
 
 **/vcpkg_installed
+**/out
+**/.vs
