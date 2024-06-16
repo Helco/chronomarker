@@ -1,7 +1,10 @@
 
 #include <ShlObj_core.h>
 #include <string_view>
+#include <sstream>
 #include <vector>
+#include <mutex>
+#include <thread>
 #include <cassert>
 #include <zmq.h>
 #include <sfse/GameConsole.h>
@@ -16,6 +19,7 @@
 using namespace std::string_view_literals;
 
 static bool shouldSendAllEvents = false;
+static std::atomic<uint32_t> dirtyEvents = 0;
 
 class VectorStream final : public DataStream {
 public:
@@ -33,6 +37,15 @@ public:
 	void wstr(const BSFixedStringCS &string) {
 		w64(string.size());
 		write(string.c_str(), string.size());
+	}
+	void wstr(const std::string &string) {
+		w64(string.length());
+		write(string.c_str(), string.length());
+	}
+	template<typename TValue> void wvec(const std::vector<TValue> &vector) {
+		w64(vector.size());
+		for (const TValue &value : vector)
+			value.serialize(*this);
 	}
 
 	virtual u64 seek(u64 offset) override {
@@ -84,17 +97,17 @@ enum class EventType : byte {
 	LocalEnvironment,
 	LocalEnvFrequent,
 	PersonalEffects,
-	PersonalAlerts,
 	EnvironmentEffects,
-	EnvironmentAlerts
+	Alerts
 };
 
 struct PlayerFrequentDataModel :
 	DataModelHooks<PlayerFrequentDataModel, 0x219A9E0, 0x219ADAC> {
 	static constexpr auto EventName = "PlayerFrequentData"sv;
+	static constexpr auto EventType = EventType::PlayerFrequent;
 
 	void serialize(VectorStream &stream) {
-		stream.w8((byte)EventType::PlayerFrequent);
+		stream.w8((byte)EventType);
 		stream.wf32(fHealth.value);
 		stream.wf32(fHealth.value);
 		stream.wf32(fMaxHealth.value);
@@ -123,10 +136,11 @@ struct PlayerFrequentDataModel :
 struct LocalEnvironmentDataModel {
 	// : DataModelHooks<LocalEnvironmentDataModel, 0x2176604, 0x21768BA> {
 	static constexpr auto EventName = "LocalEnvironmentData"sv;
+	static constexpr auto EventType = EventType::LocalEnvironment;
 	static LocalEnvironmentDataModel *instance();
 
 	void serialize(VectorStream &stream) {
-		stream.w8((byte)EventType::LocalEnvironment);
+		stream.w8((byte)EventType);
 		stream.wstr(sBodyName.value);
 		stream.w32(uBodyType.value);
 		stream.w32(uAlertTimeMs.value);
@@ -160,10 +174,11 @@ static_assert(sizeof(LocalEnvironmentDataModel) == 56 * 8);
 struct LocalEnvFrequentDataModel {
 	// : DataModelHooks<LocalEnvFrequentDataModel, 0x21766C0, 0x21768CA> {
 	static constexpr auto EventName = "LocalEnvData_Frequent"sv;
+	static constexpr auto EventType = EventType::LocalEnvFrequent;
 	static LocalEnvFrequentDataModel *instance();
 
 	void serialize(VectorStream &stream) {
-		stream.w8((byte)EventType::LocalEnvFrequent);
+		stream.w8((byte)EventType);
 		stream.wf32(fLocalPlanetTime.value);
 		stream.wf32(fLocalPlanetHoursPerDay.value);
 		stream.wf32(fGalacticStandardTime.value);
@@ -235,10 +250,11 @@ static_assert(sizeof(NestedUIValue<AlertDataModel>) == 216);
 struct PersonalEffectsDataModel {
 	// : DataModelHooks<PersonalEffectsDataModel, 0x215D646, 0x215DD2B> {
 	static constexpr auto EventName = "PersonalEffectsData"sv;
+	static constexpr auto EventType = EventType::PersonalEffects;
 	static PersonalEffectsDataModel *instance();
 
 	void serialize(VectorStream &stream) {
-		stream.w8((byte)EventType::PersonalEffects);
+		stream.w8((byte)EventType);
 		stream.w32(uAlertTimeMs.value);
 		aPersonalEffects.serialize(stream);
 	}
@@ -249,13 +265,17 @@ struct PersonalEffectsDataModel {
 };
 static_assert(sizeof(PersonalEffectsDataModel) == 240);
 
+// Alerts are weird, the data is only temporarily stored in the ArrayNestedUIValue, so we take a different route altogether
+
 struct PersonalAlertsDataModel {
-	static constexpr auto EventName = "PersonalAlertsData"sv;
+	//static constexpr auto EventName = "PersonalAlertsData"sv;
+	//static constexpr auto EventType = EventType::PersonalAlerts;
 	static PersonalAlertsDataModel *instance();
 
 	void serialize(VectorStream &stream) {
-		stream.w8((byte)EventType::PersonalAlerts);
+		//stream.w8((byte)EventType);
 		aPersonalAlerts.serialize(stream);
+		OutputDebugStringA("EnvironmentAlerts");
 	}
 
 	char garbage[72];
@@ -265,10 +285,11 @@ static_assert(sizeof(PersonalAlertsDataModel) == 208);
 
 struct EnvironmentEffectsDataModel {
 	static constexpr auto EventName = "EnvironmentEffectsData"sv;
+	static constexpr auto EventType = EventType::EnvironmentEffects;
 	static EnvironmentEffectsDataModel *instance();
 
 	void serialize(VectorStream &stream) {
-		stream.w8((byte)EventType::EnvironmentEffects);
+		stream.w8((byte)EventType);
 		stream.w32(uAlertTimeMS.value);
 		stream.w32(uEnvIconPulseMinMS.value);
 		stream.w32(uEnvIconPulseMaxMS.value);
@@ -288,12 +309,14 @@ struct EnvironmentEffectsDataModel {
 static_assert(sizeof(EnvironmentEffectsDataModel) == 368);
 
 struct EnvironmentAlertsDataModel {
-	static constexpr auto EventName = "EnvironmentAlertsData"sv;
+	//static constexpr auto EventName = "EnvironmentAlertsData"sv;
+	//static constexpr auto EventType = EventType::EnvironmentAlerts;
 	static EnvironmentAlertsDataModel *instance();
 
 	void serialize(VectorStream &stream) {
-		stream.w8((byte)EventType::EnvironmentAlerts);
+		//stream.w8((byte)EventType);
 		aEnvironmentAlerts.serialize(stream);
+		OutputDebugStringA("EnvironmentAlerts");
 	}
 
 	char garbage[72];
@@ -333,7 +356,67 @@ static void *zmqContext = nullptr;
 static void *zmqSocket = nullptr;
 static void *zmqMonitorSocket = nullptr;
 
-template<typename DataModel> void sendDataModel() {
+struct MyAlert {
+	std::string sEffectIcon, sAlertText, sAlertSubText;
+	bool bIsPositive;
+
+	void serialize(VectorStream &stream) const
+	{
+		stream.wstr(sEffectIcon);
+		stream.wstr(sAlertText);
+		stream.wstr(sAlertSubText);
+		stream.w8(bIsPositive);
+	}
+};
+
+struct OnInitAlert {
+	static void *myInitAlert(byte* alertPtr) {
+		auto *alert = (AlertDataModel *)(alertPtr + 40);
+		MyAlert myAlert;
+		myAlert.sEffectIcon = alert->sEffectIcon.value.c_str();
+		myAlert.sAlertText = alert->sAlertText.value.c_str();
+		myAlert.sAlertSubText = alert->sAlertSubText.value.c_str();
+		myAlert.bIsPositive = alert->bIsPositive.value;
+		{
+			std::lock_guard _{ alertsMutex };
+			alerts.push_back(std::move(myAlert));
+		}
+		dirtyEvents |= 1u << (byte)EventType::Alerts;
+
+		/*std::stringstream ss;
+		ss << "Alert: " << alert->sEffectIcon.value.c_str() << " (" << alert->sAlertText.value.c_str() << ")" << " (" << alert->sAlertSubText.value.c_str() << ") " << alert->bIsPositive.value;
+		auto str = ss.str();
+		OutputDebugStringA(str.c_str());*/
+		return (*func)(alertPtr);
+	}
+
+	inline static RelocAddr<uintptr_t> callAddress1{ 0x215CF3D };
+	inline static RelocAddr<uintptr_t> callAddress2{ 0x215D2A2 };
+	inline static RelocAddr<uintptr_t> callAddress3{ 0x215EFAE };
+	inline static const RelocPtr<decltype(myInitAlert)> func{ 0x21604D4 };
+	inline static std::vector<MyAlert> alerts;
+	inline static std::mutex alertsMutex;
+
+	static void hook(BranchTrampoline &trampoline) {
+		// TODO: also here
+		trampoline.write5Call(callAddress1, (uintptr_t)myInitAlert);
+		trampoline.write5Call(callAddress2, (uintptr_t)myInitAlert);
+		trampoline.write5Call(callAddress3, (uintptr_t)myInitAlert);
+	}
+
+	static void serialize(VectorStream &stream) {
+		std::lock_guard _{ alertsMutex };
+		if (alerts.size() == 0)
+			return;
+		stream.w8((byte)EventType::Alerts);
+		stream.wvec(alerts);
+		alerts.clear();
+	}
+};
+
+template<typename DataModel> void sendDataModel(uint32_t eventBits) {
+	if ((eventBits & (1u << (byte)DataModel::EventType)) == 0)
+		return;
 	auto instance = DataModel::instance();
 	VectorStream messageStream(messageBuffer);
 	if (instance != nullptr)
@@ -343,10 +426,20 @@ template<typename DataModel> void sendDataModel() {
 	zmq_send(zmqSocket, messageBuffer.data(), messageBuffer.size(), ZMQ_NOBLOCK);
 }
 
+void sendAlertsDataModel(uint32_t eventBits) {
+	if ((eventBits & (1u << (byte)EventType::Alerts)) == 0)
+		return;
+	VectorStream messageStream(messageBuffer);
+	OnInitAlert::serialize(messageStream);
+	if (messageBuffer.size() == 0)
+		return;
+	zmq_send(zmqSocket, messageBuffer.data(), messageBuffer.size(), ZMQ_NOBLOCK);
+}
+
 template<typename DataModel> void onFlushDataModel(const char* eventName) {
 	if (DataModel::EventName != eventName)
 		return;
-	sendDataModel<DataModel>();
+	dirtyEvents |= 1u << (byte)DataModel::EventType;
 }
 
 struct OnFlushHook {
@@ -364,9 +457,7 @@ struct OnFlushHook {
 			onFlushDataModel<LocalEnvironmentDataModel>(eventType);
 			onFlushDataModel<LocalEnvFrequentDataModel>(eventType);
 			onFlushDataModel<PersonalEffectsDataModel>(eventType);
-			onFlushDataModel<PersonalAlertsDataModel>(eventType);
 			onFlushDataModel<EnvironmentEffectsDataModel>(eventType);
-			onFlushDataModel<EnvironmentAlertsDataModel>(eventType);
 		}
 	}
 
@@ -398,6 +489,7 @@ void HandleSFSEMessage(SFSEMessagingInterface::Message *msg) {
 	PlayerFrequentDataModel::hook(trampoline);
 	HUDDataModel::hook(trampoline);
 	OnFlushHook::hook(trampoline);
+	OnInitAlert::hook(trampoline);
 }
 
 class SendAllEventsTask : public SFSETaskInterface::ITaskDelegate
@@ -409,19 +501,22 @@ public:
 
 		const size_t MONITOR_MESSAGE_SIZE = 6;
 		byte dummyBuffer[MONITOR_MESSAGE_SIZE];
+		uint32_t eventBits = dirtyEvents.exchange(0);
 		while (zmq_recv(zmqMonitorSocket, dummyBuffer, MONITOR_MESSAGE_SIZE, ZMQ_DONTWAIT) > 0)
 			shouldSendAllEvents = true;
 
 		if (shouldSendAllEvents) {
 			Console_Print("Chronomarker: Send all data");
-			/*sendDataModel<PlayerFrequentDataModel>();
-			sendDataModel<LocalEnvironmentDataModel>();
-			sendDataModel<LocalEnvFrequentDataModel>();
-			sendDataModel<PersonalEffectsDataModel>();
-			sendDataModel<PersonalAlertsDataModel>();
-			sendDataModel<EnvironmentEffectsDataModel>();*/
-			sendDataModel<EnvironmentAlertsDataModel>();
+			eventBits = ~0u;
+			shouldSendAllEvents = false;
 		}
+
+		sendDataModel<PlayerFrequentDataModel>(eventBits);
+		sendDataModel<LocalEnvironmentDataModel>(eventBits);
+		sendDataModel<LocalEnvFrequentDataModel>(eventBits);
+		sendDataModel<PersonalEffectsDataModel>(eventBits);
+		sendDataModel<EnvironmentEffectsDataModel>(eventBits);
+		sendAlertsDataModel(eventBits);
 	}
 
 	virtual void Destroy() override {

@@ -10,9 +10,8 @@ enum GameMessageType : byte
     LocalEnvironment,
     LocalEnvFrequent,
     PersonalEffects,
-    PersonalAlerts,
     EnvironmentEffects,
-    EnvironmentAlerts
+    Alerts
 }
 
 internal interface IGameMessageValue<TValue>
@@ -26,9 +25,8 @@ internal struct AllGameMessages
     public LocalEnvironmentMessage localEnvironment;
     public LocalEnvFrequentMessage localEnvFrequent;
     public PersonalEffectsMessage personalEffects;
-    public PersonalAlertsMessage personalAlerts;
     public EnvironmentEffectsMessage envEffects;
-    public EnvironmentAlertsMessage envAlerts;
+    public AlertsMessage alerts;
 
     public void Set(IGameMessage message)
     {
@@ -38,9 +36,8 @@ internal struct AllGameMessages
             case LocalEnvironmentMessage m: localEnvironment = m; break;
             case LocalEnvFrequentMessage m: localEnvFrequent = m; break;
             case PersonalEffectsMessage m: personalEffects = m; break;
-            case PersonalAlertsMessage m: personalAlerts = m with { aPersonalAlerts = personalAlerts.aPersonalAlerts?.Concat(m.aPersonalAlerts).ToArray() ?? m.aPersonalAlerts }; break;
             case EnvironmentEffectsMessage m: envEffects = m; break;
-            case EnvironmentAlertsMessage m: envAlerts = m with { aEnvironmentAlerts = envAlerts.aEnvironmentAlerts?.Concat(m.aEnvironmentAlerts).ToArray() ?? m.aEnvironmentAlerts }; break;
+            case AlertsMessage m: alerts = m with { aAlerts = alerts.aAlerts?.Concat(m.aAlerts).ToArray() ?? m.aAlerts }; break;
         }
     }
 }
@@ -65,9 +62,8 @@ internal interface IGameMessage
             case GameMessageType.LocalEnvironment: return TryParse<LocalEnvironmentMessage>(data, out message);
             case GameMessageType.LocalEnvFrequent: return TryParse<LocalEnvFrequentMessage>(data, out message);
             case GameMessageType.PersonalEffects: return TryParse<PersonalEffectsMessage>(data, out message);
-            case GameMessageType.PersonalAlerts: return TryParse<PersonalAlertsMessage>(data, out message); 
             case GameMessageType.EnvironmentEffects: return TryParse<EnvironmentEffectsMessage>(data, out message);
-            case GameMessageType.EnvironmentAlerts: return TryParse<EnvironmentAlertsMessage>(data, out message);
+            case GameMessageType.Alerts: return TryParse<AlertsMessage>(data, out message);
             default: return false;
         }
     }
@@ -235,18 +231,6 @@ internal struct PersonalEffectsMessage : IGameMessage
     }
 }
 
-internal struct PersonalAlertsMessage : IGameMessage
-{
-    public GameMessageType Type => GameMessageType.PersonalAlerts;
-    public Alert[] aPersonalAlerts;
-
-    public bool TryParse(ReadOnlySpan<byte> data)
-    {
-        return ReadAndCheckType(ref data, this) &&
-            Read(ref data, out aPersonalAlerts);
-    }
-}
-
 internal struct EnvironmentEffectsMessage : IGameMessage
 {
     public GameMessageType Type => GameMessageType.EnvironmentEffects;
@@ -267,14 +251,14 @@ internal struct EnvironmentEffectsMessage : IGameMessage
     }
 }
 
-internal struct EnvironmentAlertsMessage : IGameMessage
+internal struct AlertsMessage : IGameMessage
 {
-    public GameMessageType Type => GameMessageType.EnvironmentAlerts;
-    public Alert[] aEnvironmentAlerts;
+    public GameMessageType Type => GameMessageType.Alerts;
+    public Alert[] aAlerts;
 
     public bool TryParse(ReadOnlySpan<byte> data)
     {
         return ReadAndCheckType(ref data, this) &&
-            Read(ref data, out aEnvironmentAlerts);
+            Read(ref data, out aAlerts);
     }
 }
