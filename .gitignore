@@ -34,3 +34,5 @@
 **/vcpkg_installed
 **/out
 **/.vs
+**/obj
+**/bin

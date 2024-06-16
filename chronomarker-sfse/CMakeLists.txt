@@ -7,12 +7,24 @@ project(
 )
 
 set(VCPKG_TARGET_TRIPLET x64-windows-static)
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ZeroMQ CONFIG REQUIRED)
 
-add_subdirectory(sfse)
+add_subdirectory(sfse/sfse_common)
+add_subdirectory(sfse/sfse)
+set_target_properties(
+	sfse_common
+	PROPERTIES
+		MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+)
+set_target_properties(
+	sfse
+	PROPERTIES
+		MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+)
 
 add_library(${PROJECT_NAME} SHARED)
 target_link_libraries(${PROJECT_NAME} PUBLIC
