@@ -1,0 +1,9 @@
+{
+    "id": "starfield",
+    "name": "Starfield",
+    "src": "starfield.app.js",
+    "icon": "starfield.img",
+    "sortorder": -8,
+    "version": 0.1,
+    "files": "starfield.info,starfield.app.js,starfield.img"
+}

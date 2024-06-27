@@ -28,35 +28,32 @@
         /// </summary>
         private void InitializeComponent()
         {
-            label1 = new Label();
+            statusView1 = new StatusView();
             SuspendLayout();
             // 
-            // label1
+            // statusView1
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(12, 9);
-            label1.Name = "label1";
-            label1.Size = new Size(38, 15);
-            label1.TabIndex = 0;
-            label1.Text = "label1";
+            statusView1.Location = new Point(12, 155);
+            statusView1.Name = "statusView1";
+            statusView1.Size = new Size(533, 380);
+            statusView1.TabIndex = 0;
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(587, 547);
-            Controls.Add(label1);
+            Controls.Add(statusView1);
             Margin = new Padding(2);
             Name = "MainForm";
             Text = "Form1";
             FormClosed += MainForm_FormClosed;
             Load += Form1_Load;
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
 
-        private Label label1;
+        private StatusView statusView1;
     }
 }

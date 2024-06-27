@@ -24,8 +24,6 @@ public partial class MainForm : Form
 
         poller = new() { socket };
         poller.RunAsync();
-
-        label1.Text = JsonSerializer.Serialize(lastMessages, new JsonSerializerOptions() { WriteIndented = true, IncludeFields = true });
     }
 
     private void HandleGameMessage(object? sender, NetMQSocketEventArgs e)
@@ -41,8 +39,6 @@ public partial class MainForm : Form
                 newText = JsonSerializer.Serialize(lastMessages, new JsonSerializerOptions() { WriteIndented = true, IncludeFields = true });
             }
         }
-        if (newText != null)
-            Invoke(() => label1.Text = newText);
     }
 
     private async void Form1_Load(object sender, EventArgs e)
