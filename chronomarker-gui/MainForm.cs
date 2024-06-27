@@ -1,8 +1,6 @@
 using System.Text.Json;
 using NetMQ;
 using NetMQ.Sockets;
-using Windows.Devices.Bluetooth;
-using Windows.Devices.Bluetooth.Advertisement;
 
 namespace Chronomarker;
 
@@ -11,6 +9,7 @@ public partial class MainForm : Form
     private SubscriberSocket socket;
     private NetMQPoller poller;
     private AllGameMessages lastMessages;
+    private LPV6 lpv6;
 
     public MainForm()
     {
@@ -24,6 +23,9 @@ public partial class MainForm : Form
 
         poller = new() { socket };
         poller.RunAsync();
+
+        lpv6 = new(PrintLine);
+        lpv6.OnStatusChanged += status => PrintLine($"New status: {status}");
     }
 
     private void HandleGameMessage(object? sender, NetMQSocketEventArgs e)
@@ -41,14 +43,28 @@ public partial class MainForm : Form
         }
     }
 
-    private async void Form1_Load(object sender, EventArgs e)
+    int i = 0;
+    bool shouldSendData = true;
+
+    private void Form1_Load(object sender, EventArgs e)
     {
-        var adapter = await BluetoothAdapter.GetDefaultAsync();
-        var watcher = new BluetoothLEAdvertisementWatcher();
-        watcher.Received += async (s, e) =>
+        lpv6.Start();
+
+        _ = Task.Run(async () =>
         {
-            var device = await BluetoothLEDevice.FromBluetoothAddressAsync(e.BluetoothAddress);
-        };
+            while (shouldSendData)
+            {
+                i++;
+                await lpv6.SendMessage(Enumerable.Repeat((byte)(i % 64), i % 64).ToArray());
+                PrintLine($"Sending {i%64} bytes");
+                await Task.Delay(300);
+            }
+        });
+    }
+
+    private void PrintLine(string line)
+    {
+        BeginInvoke(() => textBox1.Text = line + "\r\n" + textBox1.Text);
     }
 
     private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -57,5 +73,8 @@ public partial class MainForm : Form
         poller.Dispose();
         socket.Close();
         socket.Dispose();
+        shouldSendData = false;
+        lpv6.Stop();
+        lpv6.Dispose();
     }
 }

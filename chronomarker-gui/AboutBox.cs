@@ -37,7 +37,7 @@ namespace Chronomarker
                         return titleAttribute.Title;
                     }
                 }
-                return System.IO.Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().CodeBase);
+                return System.IO.Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location) ?? "<unknown title>";
             }
         }
 
@@ -45,7 +45,7 @@ namespace Chronomarker
         {
             get
             {
-                return Assembly.GetExecutingAssembly().GetName().Version.ToString();
+                return Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "<unknown version>";
             }
         }
 

@@ -29,20 +29,31 @@
         private void InitializeComponent()
         {
             statusView1 = new StatusView();
+            textBox1 = new TextBox();
             SuspendLayout();
             // 
             // statusView1
             // 
-            statusView1.Location = new Point(12, 155);
+            statusView1.Location = new Point(12, 12);
             statusView1.Name = "statusView1";
-            statusView1.Size = new Size(533, 380);
+            statusView1.Size = new Size(533, 85);
             statusView1.TabIndex = 0;
+            // 
+            // textBox1
+            // 
+            textBox1.Location = new Point(12, 290);
+            textBox1.Multiline = true;
+            textBox1.Name = "textBox1";
+            textBox1.ReadOnly = true;
+            textBox1.Size = new Size(467, 245);
+            textBox1.TabIndex = 1;
             // 
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(587, 547);
+            Controls.Add(textBox1);
             Controls.Add(statusView1);
             Margin = new Padding(2);
             Name = "MainForm";
@@ -50,10 +61,12 @@
             FormClosed += MainForm_FormClosed;
             Load += Form1_Load;
             ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
 
         private StatusView statusView1;
+        private TextBox textBox1;
     }
 }
