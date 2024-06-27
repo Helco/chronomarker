@@ -1,0 +1,12 @@
+{
+    "name": "espruino-imageconverter",
+    "description": "The Espruino image converter web tool, but not in the Web anymore",
+    "authors": "author",
+    "version": "1.0.0",
+    "main": "imageconvertcli.js",
+    "dependencies": {
+        "canvas": "2.11.2",
+        "node-heatshrink": "1.1.0",
+        "deasync": "0.1.30"
+    }
+}

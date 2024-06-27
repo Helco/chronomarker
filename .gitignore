@@ -36,3 +36,4 @@
 **/.vs
 **/obj
 **/bin
+**/node_modules
