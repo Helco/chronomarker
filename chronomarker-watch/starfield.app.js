@@ -104,19 +104,51 @@ function drawMoon (phase) {
  
 }
 
+const gfx_name = Graphics.createArrayBuffer(7, 12 * 12, 2, { msb: true });
+const img_name = { width: 7, height: 12, bpp: 2, buffer: gfx_name.buffer, transparent: 0 };
+gfx_name.transparent = 0;
+let lastName = ""; // TODO: reuse same characters, skip space and so on...
+
+function prepareName(name) {
+  gfx_name.clear(true);
+  gfx_name.setColor("#fff");
+  gfx_name.setFontArchitekt12();
+  for (var i = 0; i < name.length; i++)
+    gfx_name.drawString(name[i], 0, i * 12, false);
+}
+
+function drawCircledChar(ch, angle) {
+  const r = 57;
+  const x = 120 + Math.cos(angle) * r;
+  const y = 120 + Math.sin(angle) * r;
+  g.drawImage(img_name, x, y, { frame: ch, rotate: -3.1415926 / 2 + angle, filter: true });
+}
+
+const anglePerChar = 0.17;
+function drawName(name, angle) {
+  if (lastName != name)
+    prepareName(lastName = name);
+  var curAngle = angle + name.length * anglePerChar * 0.5;
+  for (var i = 0; i < name.length; i++, curAngle -= anglePerChar)
+    drawCircledChar(i, curAngle);
+}
+
 function fullDraw(o2, co2) {
   g.setBgColor("#111");
   g.clear(false);
   g.drawBackground();
   g.drawTicks(0.3);
   drawO2CO2(o2, co2);
-  g.setFontArchitekt15(1);
+  g.setFontArchitekt12(1);
   g.setColor("#fff");
-  g.drawString("O2", 120 - 94, 100);
-  g.drawString("CO2", 120 + 69, 100);
+  g.drawString("O2", 120 - 92, 104);
+  g.drawString("CO2", 120 + 73, 104);
   
   drawMoon(o2 / 63);
   g.drawImage(imagePlanet, 70, 70);
+  
+  g.setColor("#fff");
+  drawName('HEMERLO IV', o2 / 63 * 3.141592653);
 }
 
 var i = 256;
