@@ -55,11 +55,43 @@ Bangle.setLCDTimeout(0);
 g.reset();
 g.setColor("#fff");
 g.clear(false);
-
 g.drawBackground();
-g.drawHourMarkings();
 g.drawTicks(0.3);
-//g.drawSlice(1.0, 2.0, 72, 95);
+
+const maxO2CO2 = 63;
+const o2StartAngle = 1.5 * 3.141592653;
+const co2StartAngle = 0.5 * 3.141592653;
+function drawO2CO2(o2, co2) {
+  if (o2 > 0 && co2 > 0)
+    o2--, co2--;
+  if (o2 > 0)
+    g.setColor("#fff").drawSlice(o2StartAngle - 3.141592653 * o2 / maxO2CO2, o2StartAngle, 74, 95);
+  if (co2 > 0)
+    g.setColor("#f00").drawSlice(co2StartAngle, co2StartAngle + 3.141592653 * co2 / maxO2CO2, 74, 95);
+}
+
+var i = 256;
+setInterval(() => {
+  i++;
+  var o2 = 0, co2 = 0;
+  var i1 = i % 64;
+  var i2 = (i / 64)|0;
+  if (i2 == 0) o2 = i1;
+  if (i2 == 1) o2 = 63 - i1;
+  if (i2 == 2) co2 = i1;
+  if (i2 == 3) co2 = 63 - i1;
+  if (i2 == 4) { o2 = i1 / 2; co2 = i1 / 2; }
+  if (i2 == 5) { i1 = 63 - i1; o2 = i1 / 2; co2 = i1 / 2; }
+  if (i2 == 6) { o2 = 63 - i1; co2 = i1; }
+  if (i2 == 7) { co2 = 63 - i1; o2 = i1; }
+  if (i2 >= 8) i = 256;
+  
+  g.clear(false);
+  g.drawBackground();
+  g.drawTicks(0.3);
+  drawO2CO2(o2, co2);
+}, 55);
+
 
 function exitTo(nextApp) {
   if (notifyT != 0) clearInterval(notifyT);
