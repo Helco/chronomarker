@@ -2,11 +2,11 @@ var imageconverter = require("./imageconverter");
 var canvas = require("canvas");
 
 (async () => {
-    const img = await canvas.loadImage("../chronomarker-watch/starfield-planet.png");
+    const img = await canvas.loadImage("../chronomarker-watch/starfield-icons12.png");
     const str = await imageconverter.imagetoString(img, {
-        mode: "2bitbw",
+        mode: "opt1bit",
         transparent: true,
-        compression: true,
+        compression: false,
         output: "string"
     });
     console.log(str);
