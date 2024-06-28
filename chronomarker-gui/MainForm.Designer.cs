@@ -36,7 +36,7 @@
             // 
             statusView1.Location = new Point(12, 12);
             statusView1.Name = "statusView1";
-            statusView1.Size = new Size(533, 85);
+            statusView1.Size = new Size(563, 318);
             statusView1.TabIndex = 0;
             // 
             // textBox1
