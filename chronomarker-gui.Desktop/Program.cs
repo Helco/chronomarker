@@ -3,7 +3,7 @@
 using Avalonia;
 using Avalonia.ReactiveUI;
 
-namespace chronomarker_gui.Desktop;
+namespace Chronomarker.Desktop;
 
 class Program
 {

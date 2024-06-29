@@ -1,6 +1,6 @@
 ﻿using ReactiveUI;
 
-namespace chronomarker_gui.ViewModels;
+namespace Chronomarker.ViewModels;
 
 public class ViewModelBase : ReactiveObject
 {

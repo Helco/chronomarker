@@ -1,6 +1,6 @@
 ﻿using Avalonia.Controls;
 
-namespace chronomarker_gui.Views;
+namespace Chronomarker.Views;
 
 public partial class MainView : UserControl
 {

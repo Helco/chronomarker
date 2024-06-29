@@ -2,9 +2,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:vm="clr-namespace:chronomarker_gui.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="450"
-             x:Class="chronomarker_gui.Views.MainView"
+             xmlns:vm="clr-namespace:Chronomarker.ViewModels"
+             xmlns:v="clr-namespace:Chronomarker.Views"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="600"
+             x:Class="Chronomarker.Views.MainView"
              x:DataType="vm:MainViewModel">
   <Design.DataContext>
     <!-- This only sets the DataContext for the previewer in an IDE,
@@ -12,31 +13,13 @@
     <vm:MainViewModel />
   </Design.DataContext>
 
+  <ScrollViewer>
 	<StackPanel
 		Spacing="5"
 		Margin="10, 10, 10, 10">
-        <TextBlock Text="Player:" HorizontalAlignment="Left" FontWeight="Bold"/>
-		<ProgressBar Value="50" ShowProgressText="true" ProgressTextFormat="O2"/>
-		<ProgressBar Value="70" Foreground="Gray" Background="Red" ShowProgressText="True" ProgressTextFormat="CO2"/>
 
-		<CheckBox
-			IsEnabled="True"
-			IsChecked="True"
-			Content="Is flying"
-			HorizontalAlignment="Center"/>
-		<CheckBox
-			IsEnabled="True"
-			IsChecked="True"
-			Content="Is scanning"
-			HorizontalAlignment="Center"/>
-		
-		<Separator/>
-		<TextBlock Text="Environment:" HorizontalAlignment="Left" FontWeight="Bold"/>
-		<DockPanel>
-			<TextBlock Text="Name:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
-			<TextBox Text="asldkj" Focusable="False" />
-		</DockPanel>
-		<ProgressBar Value="23" ShowProgressText="True" ProgressTextFormat="Local time of day"/>
+    <v:StatusView DataContext="{Binding Status}"/>
 		
 	</StackPanel>
+  </ScrollViewer>
 </UserControl>

@@ -1,6 +1,7 @@
-﻿namespace chronomarker_gui.ViewModels;
+﻿namespace Chronomarker.ViewModels;
 
-public class MainViewModel : ViewModelBase
+internal class MainViewModel : ViewModelBase
 {
     public string Greeting => "Welcome to Avalonia!";
+    public StatusModel Status { get; } = new();
 }

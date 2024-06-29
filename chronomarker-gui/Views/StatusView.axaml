@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Chronomarker.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="600"
+             x:Class="Chronomarker.Views.StatusView"
+             x:DataType="vm:StatusModel">
+  <Design.DataContext>
+     <vm:StatusModel />
+  </Design.DataContext>
+
+  <StackPanel
+		Spacing="5"
+		Margin="10, 10, 10, 10">
+    <TextBlock Text="Player:" HorizontalAlignment="Left" FontWeight="Bold"/>
+    <ProgressBar Value="{Binding O2}" Maximum="{Binding MaxO2CO2}" ShowProgressText="true" ProgressTextFormat="O2"/>
+    <ProgressBar Value="{Binding InvCO2}" Maximum="{Binding MaxO2CO2}" Foreground="Gray" Background="Red" ShowProgressText="True" ProgressTextFormat="CO2"/>
+
+    <DockPanel>
+      <TextBlock Text="Position:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <ToggleButton IsChecked="{Binding IsInSpaceship}" Content="In spaceship" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding IsLanded}" Content="Is landed" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding IsScanning}" Content="Is scanning" Focusable="False" IsHitTestVisible="False"/>
+      </StackPanel>
+    </DockPanel>
+    <DockPanel>
+      <TextBlock Text="Effects:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <ToggleButton IsChecked="{Binding HasCardioEffect}" Content="Cardio" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding HasSkeletalEffect}" Content="Skeletal" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding HasNervousEffect}" Content="Nervous" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding HasDigestiveEffect}" Content="Digestive" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding HasMiscEffect}" Content="Misc" Focusable="False" IsHitTestVisible="False"/>
+      </StackPanel>
+    </DockPanel>
+
+    <Separator/>
+    <TextBlock Text="Environment:" HorizontalAlignment="Left" FontWeight="Bold"/>
+    <Grid ColumnDefinitions="Auto, *, *">
+      <TextBlock Text="Body / Location:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left" Grid.Column="0"/>
+      <TextBox Text="{Binding BodyName}" Focusable="False" Margin="0, 0, 10, 0" Grid.Column="1"  IsEnabled="False"/>
+      <TextBox Text="{Binding LocationName}" Focusable="False" Grid.Column="2"  IsEnabled="False"/>
+    </Grid>
+    <ProgressBar Value="{Binding LocalTime}" Maximum="1" ShowProgressText="True" ProgressTextFormat="Local time of day"/>
+    <DockPanel>
+      <TextBlock Text="Effects:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <ToggleButton IsChecked="{Binding HasRadiationEffect}" Content="Radiation" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding HasThermalEffect}" Content="Thermal" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding HasAirborneEffect}" Content="Airborne" Focusable="False" IsHitTestVisible="False"/>
+        <ToggleButton IsChecked="{Binding HasCorrosiveEffect}" Content="Corrosive" Focusable="False" IsHitTestVisible="False"/>
+      </StackPanel>
+    </DockPanel>
+    <DockPanel>
+      <TextBlock Text="Gravity:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <NumericUpDown Value="{Binding Gravity}" ShowButtonSpinner="False"  IsEnabled="False"/>
+    </DockPanel>
+    <DockPanel>
+      <TextBlock Text="Oxygen:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <NumericUpDown Value="{Binding Oxygen}" ShowButtonSpinner="False"  IsEnabled="False"/>
+    </DockPanel>
+    <DockPanel>
+      <TextBlock Text="Temperature:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <NumericUpDown Value="{Binding Temperature}" ShowButtonSpinner="False"  IsEnabled="False"/>
+    </DockPanel>
+
+    <Separator/>
+    <ItemsControl  ItemsSource="{Binding Alerts}"  >
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Border BorderBrush="Green" BorderThickness="2" Padding="5" CornerRadius="5" Margin="0, 0, 0, 10">
+            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto">
+              <TextBlock Text="{Binding EffectIcon}" FontWeight="Bold" Grid.RowSpan="2" VerticalAlignment="Center" Margin="5,0,20,0"/>
+              <TextBlock Text="{Binding AlertText}" FontWeight="SemiBold" Grid.Column="1"/>
+              <TextBlock Text="{Binding AlertSubText}" Grid.Column="1" Grid.Row="1"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+  </StackPanel>
+</UserControl>

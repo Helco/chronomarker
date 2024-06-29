@@ -2,10 +2,10 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 
-using chronomarker_gui.ViewModels;
-using chronomarker_gui.Views;
+using Chronomarker.ViewModels;
+using Chronomarker.Views;
 
-namespace chronomarker_gui;
+namespace Chronomarker;
 
 public partial class App : Application
 {
