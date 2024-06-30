@@ -7,18 +7,9 @@ using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 
-namespace Chronomarker;
+namespace Chronomarker.Services;
 
-internal enum LPV6Status
-{
-    Initial,
-    Watching,
-    Connecting,
-    Connected,
-    Disconnected
-}
-
-internal class LPV6 : IDisposable
+internal class LPV6Service : IWatchService
 {
     private class Connection : IDisposable
     {
@@ -63,8 +54,8 @@ internal class LPV6 : IDisposable
     private Task? runTask;
     private bool disposedValue;
 
-    private LPV6Status _status;
-    public LPV6Status Status
+    private WatchStatus _status;
+    public WatchStatus Status
     {
         get => _status;
         set
@@ -75,18 +66,19 @@ internal class LPV6 : IDisposable
             OnStatusChanged?.Invoke(value);
         }
     }
-    public event Action<LPV6Status>? OnStatusChanged;
+    public bool IsRunning => cancellation != null;
+    public event Action<WatchStatus>? OnStatusChanged;
 
     public bool PrintWatchLog { get; set; } // non-functional
 
-    public LPV6(Action<string> logMessage) => this.logMessage = logMessage;
+    public LPV6Service(LogService logService) => logMessage = logService.Log;
 
     public void Start()
     {
         lock (runLock)
         {
             Stop();
-            Status = LPV6Status.Initial;
+            Status = WatchStatus.Initial;
             cancellation = new();
             runTask = Task.Run(RunLoop);
         }
@@ -201,7 +193,7 @@ internal class LPV6 : IDisposable
             characteristic.ValueChanged += (_, ev) => HandleReceive(connection, ev);
             return connection;
         }
-        catch(Exception ex) when (ex is not ConnectionException)
+        catch (Exception ex) when (ex is not ConnectionException)
         {
             throw new ConnectionException(ex.Message, ex);
         }
@@ -213,7 +205,7 @@ internal class LPV6 : IDisposable
             return;
         connection.Cancellation.Cancel();
         logMessage($"Disconnect {connection.Address:X8}: {reason}");
-        Status = LPV6Status.Disconnected;
+        Status = WatchStatus.Disconnected;
         Task.Run(() =>
         {
             try
@@ -271,11 +263,11 @@ internal class LPV6 : IDisposable
         var token = cancellation!.Token;
         while (!token.IsCancellationRequested)
         {
-            Status = LPV6Status.Watching;
+            Status = WatchStatus.Watching;
             var address = await WatchForDevice(token);
-            Status = LPV6Status.Connecting;
+            Status = WatchStatus.Connecting;
             var connection = currentConnection = await ConnectTo(address);
-            Status = LPV6Status.Connected;
+            Status = WatchStatus.Connected;
             token.Register(connection.Cancellation.Cancel);
             _ = Task.Run(() => TaskTimeout(connection));
             await connection.Completion.Task;

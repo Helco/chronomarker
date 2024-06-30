@@ -20,20 +20,23 @@ internal class AlertModel : ViewModelBase
 
 internal class StatusModel : ViewModelBase
 {
+    public bool IsConnected { get; private set; }
+    public string ConnectionText => IsConnected ? "Connected" : "Disconnected";
+    public IImmutableSolidColorBrush ConnectionColor => IsConnected ? Brushes.Green : Brushes.Red;
 
-    public float O2 { get; private set; } = 60f;
-    public float CO2 { get; private set; } = 20f;
+    public float O2 { get; private set; }
+    public float CO2 { get; private set; }
     public float InvCO2 => MaxO2CO2 - CO2;
-    public float MaxO2CO2 { get; private set; } = 120f;
-    public bool IsInSpaceship { get; private set; } = false;
-    public bool IsLanded { get; private set; } = true;
-    public bool IsScanning { get; private set; } = true;
-    public float Gravity { get; private set; } = 0.9f;
-    public float Oxygen { get; private set; } = 2;
-    public float Temperature { get; private set; } = 23f;
-    public string BodyName { get; private set; } = "Hemerlo IV";
-    public string LocationName { get; private set; } = "Soft Taco Planes";
-    public float LocalTime { get; private set; } = 0.3f;
+    public float MaxO2CO2 { get; private set; }
+    public bool IsInSpaceship { get; private set; }
+    public bool IsLanded { get; private set; }
+    public bool IsScanning { get; private set; }
+    public float Gravity { get; private set; }
+    public float Oxygen { get; private set; }
+    public float Temperature { get; private set; }
+    public string BodyName { get; private set; } = "";
+    public string LocationName { get; private set; } = "";
+    public float LocalTime { get; private set; }
     public bool HasCardioEffect { get; private set; }
     public bool HasSkeletalEffect { get; private set; }
     public bool HasNervousEffect { get; private set; }
@@ -43,8 +46,5 @@ internal class StatusModel : ViewModelBase
     public bool HasThermalEffect { get; private set; }
     public bool HasAirborneEffect { get; private set; }
     public bool HasCorrosiveEffect { get; private set; }
-    public ObservableCollection<AlertModel> Alerts { get; } = [
-        new() { EffectIcon="i1", AlertText="Warning", AlertSubText="That's not good", IsPositive = false},
-        new() { EffectIcon="i2", AlertText="Information", AlertSubText="That is better", IsPositive = true},
-    ];
+    public ObservableCollection<AlertModel> Alerts { get; } = [];
 }

@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Chronomarker.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="450"
+             x:Class="Chronomarker.Views.LogView"
+             x:DataType="vm:LogModel">
+  <Design.DataContext>
+    <vm:LogModel>
+      <vm:LogModel.Lines>aslkdj xlcvkj w4erlk jxcvlkj weflkj xcvlkj </vm:LogModel.Lines>
+      <vm:LogModel.Lines>sdlkfj xovic jweflk j</vm:LogModel.Lines>
+    </vm:LogModel>
+  </Design.DataContext>
+
+  <Border BorderBrush="Black" BorderThickness="1" CornerRadius="3" Grid.Row="1" Margin="0, 10, 0, 0">
+    <DockPanel
+      Margin="10, 10, 10, 10"
+      LastChildFill="True">
+      <TextBlock FontSize="20" FontWeight="Bold" Text="Log" HorizontalAlignment="Center" DockPanel.Dock="Top"/>
+      <DataGrid
+        HeadersVisibility="None"
+        ItemsSource="{Binding Lines}"
+        IsReadOnly="True"
+        GridLinesVisibility="All"
+        BorderThickness="1"
+        BorderBrush="Gray"
+        Margin="0, 10, 0, 0"
+        RowHeight="22"
+        CanUserSortColumns="False"
+        CanUserReorderColumns="False"
+        CanUserResizeColumns="False"
+        MinColumnWidth="500">
+        <DataGrid.Columns>
+          <DataGridTextColumn Binding="{Binding}" FontSize="12"/>
+        </DataGrid.Columns>
+      </DataGrid>
+    </DockPanel>
+  </Border>
+</UserControl>

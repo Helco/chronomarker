@@ -4,10 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:Chronomarker.Views"
-        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="600"
         x:Class="Chronomarker.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="Chronomarker"
-		Width="450" Height="450">
-        <views:MainView />
+		Width="1000" Height="640"
+        CanResize="False">
+        <views:MainView  Padding="5"/>
 </Window>

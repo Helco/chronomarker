@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using static Chronomarker.IGameMessage;
+using static Chronomarker.Services.IGameMessage;
 
-namespace Chronomarker;
+namespace Chronomarker.Services;
 
 enum GameMessageType : byte
 {
@@ -32,7 +32,7 @@ internal struct AllGameMessages
 
     public void Set(IGameMessage message)
     {
-        switch(message)
+        switch (message)
         {
             case PlayerFrequentMessage m: playerFrequent = m; break;
             case LocalEnvironmentMessage m: localEnvironment = m; break;

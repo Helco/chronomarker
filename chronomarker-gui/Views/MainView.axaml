@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Chronomarker.ViewModels"
              xmlns:v="clr-namespace:Chronomarker.Views"
-             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="600"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="640"
              x:Class="Chronomarker.Views.MainView"
              x:DataType="vm:MainViewModel">
   <Design.DataContext>
@@ -13,13 +13,17 @@
     <vm:MainViewModel />
   </Design.DataContext>
 
-  <ScrollViewer>
-	<StackPanel
-		Spacing="5"
-		Margin="10, 10, 10, 10">
-
-    <v:StatusView DataContext="{Binding Status}"/>
-		
-	</StackPanel>
-  </ScrollViewer>
+    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto, 100">
+      <Border BorderBrush="Black" BorderThickness="1" CornerRadius="3">
+        <StackPanel
+          Spacing="5"
+          Margin="10, 10, 10, 10">
+          <TextBlock FontSize="20" FontWeight="Bold" Text="Watch" HorizontalAlignment="Center"/>
+        </StackPanel>
+      </Border>
+      
+      <v:LogView Grid.Row="1" DataContext="{Binding Log}"/>
+      <v:StatusView DataContext="{Binding Status}" Margin="10, 0, 0, 0"
+                    Grid.Column="1" Grid.RowSpan="3"/>
+    </Grid>
 </UserControl>
