@@ -2,7 +2,30 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="Chronomarker.Views.WatchView">
+             xmlns:vm="clr-namespace:Chronomarker.ViewModels"
+             xmlns:clr="clr-namespace:Chronomarker"
+             xmlns:s="clr-namespace:Chronomarker.Services"
+             mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="450"
+             x:Class="Chronomarker.Views.WatchView"
+             x:DataType="vm:WatchModel">
+  <Design.DataContext>
+    <vm:WatchModel/>
+  </Design.DataContext>
   
+  <Border BorderBrush="Black" BorderThickness="1" CornerRadius="3">
+    <StackPanel
+      Spacing="5"
+      Margin="10, 10, 10, 10">
+      <TextBlock FontSize="20" FontWeight="Bold" Text="Watch" HorizontalAlignment="Center"/>
+      <DockPanel>
+        <TextBlock Text="Model:" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0, 0, 10, 0"/>
+        <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" ItemsSource="{Binding Source={clr:EnumBindingSource {x:Type s:WatchType}}}"/>
+      </DockPanel>
+      <Grid ColumnDefinitions="Auto, 10, Auto, 4, 100*" RowDefinitions="Auto">
+        <TextBlock Text="Status: " VerticalAlignment="Center" Grid.Column="2" FontWeight="SemiBold"/>
+        <TextBlock Text="{Binding WatchStatus}" VerticalAlignment="Center" Grid.Column="4"/>
+        <Button Content="{Binding StartStopText}" Grid.Column="0" Command="{Binding StartStop}"/>
+      </Grid>
+    </StackPanel>
+  </Border>  
 </UserControl>

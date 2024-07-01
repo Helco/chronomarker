@@ -20,7 +20,7 @@
       <TextBlock FontSize="20" FontWeight="Bold" Text="Log" HorizontalAlignment="Center" DockPanel.Dock="Top"/>
       <DataGrid
         HeadersVisibility="None"
-        ItemsSource="{Binding Lines}"
+        ItemsSource="{Binding Lines, Mode=OneWay}"
         IsReadOnly="True"
         GridLinesVisibility="All"
         BorderThickness="1"

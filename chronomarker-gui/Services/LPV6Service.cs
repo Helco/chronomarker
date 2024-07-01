@@ -97,6 +97,7 @@ internal class LPV6Service : IWatchService
             catch (Exception) { }
             cancellation = null;
             runTask = null;
+            Status = WatchStatus.Initial;
         }
     }
 
@@ -251,7 +252,7 @@ internal class LPV6Service : IWatchService
                 }
             }
         }
-        catch (TaskCanceledException) { }
+        catch (OperationCanceledException) { }
         finally
         {
             connection.Completion.TrySetResult();
@@ -260,19 +261,26 @@ internal class LPV6Service : IWatchService
 
     private async Task RunLoop()
     {
-        var token = cancellation!.Token;
-        while (!token.IsCancellationRequested)
+        try
         {
-            Status = WatchStatus.Watching;
-            var address = await WatchForDevice(token);
-            Status = WatchStatus.Connecting;
-            var connection = currentConnection = await ConnectTo(address);
-            Status = WatchStatus.Connected;
-            token.Register(connection.Cancellation.Cancel);
-            _ = Task.Run(() => TaskTimeout(connection));
-            await connection.Completion.Task;
-            HandleDisconnect(connection, "Unknown disconnection event");
+            var token = cancellation!.Token;
+            while (!token.IsCancellationRequested)
+            {
+                Status = WatchStatus.Watching;
+                logMessage("Start watching for LPV6");
+                var address = await WatchForDevice(token);
+                Status = WatchStatus.Connecting;
+                logMessage("Found watch, connecting...");
+                var connection = currentConnection = await ConnectTo(address);
+                Status = WatchStatus.Connected;
+                logMessage("Connected");
+                token.Register(connection.Cancellation.Cancel);
+                _ = Task.Run(() => TaskTimeout(connection));
+                await connection.Completion.Task;
+                HandleDisconnect(connection, "Unknown disconnection event");
+            }
         }
+        catch (OperationCanceledException) { }
     }
 
     public async Task SendMessage(byte[] message)

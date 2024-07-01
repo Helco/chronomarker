@@ -20,12 +20,13 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var collection = new ServiceCollection();
-        collection.AddSingleton<LogView>();
+        collection.AddSingleton<LogModel>();
         collection.AddSingleton<StatusModel>();
+        collection.AddSingleton<WatchModel>();
         collection.AddSingleton<MainViewModel>();
 
         collection.AddSingleton<LogService>();
-        collection.AddSingleton<IWatchService, ProxyWatchService>();
+        collection.AddSingleton<ProxyWatchService>();
 
         var services = collection.BuildServiceProvider();
         Resources.Add(typeof(IServiceProvider), services);

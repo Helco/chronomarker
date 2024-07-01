@@ -1,4 +1,5 @@
 ﻿using System;
+using Avalonia.Threading;
 using Chronomarker.ViewModels;
 
 namespace Chronomarker.Services;
@@ -14,6 +15,6 @@ internal class LogService
 
     public void Log(string message)
     {
-        model.Lines.Insert(0, message);
+        Dispatcher.UIThread.InvokeAsync(() => model.Lines.Insert(0, message));
     }
 }

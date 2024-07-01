@@ -8,7 +8,7 @@ public partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
-
-        AppServiceProvider.GetRequiredService<IWatchService>
+        if (Design.IsDesignMode)
+            return;
     }
 }

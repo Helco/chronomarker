@@ -7,6 +7,7 @@ namespace Chronomarker.Views
         public WatchView()
         {
             InitializeComponent();
+            
         }
     }
 }
