@@ -27,6 +27,7 @@ public partial class App : Application
 
         collection.AddSingleton<LogService>();
         collection.AddSingleton<ProxyWatchService>();
+        collection.AddSingleton<IGameService, GameService>();
 
         var services = collection.BuildServiceProvider();
         Resources.Add(typeof(IServiceProvider), services);
