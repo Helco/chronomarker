@@ -15,6 +15,7 @@
 #include <sfse_common/BranchTrampoline.h>
 #include <sfse_common/Log.h>
 #include <sfse_common/DataStream.h>
+#include "commonlibsf-rel/VersionDatabase.h"
 
 using namespace std::string_view_literals;
 
@@ -544,6 +545,7 @@ extern "C" {
 	__declspec(dllexport) bool SFSEPlugin_Load(const SFSEInterface *sfse)
 	{
 		DebugLog::openRelative(CSIDL_MYDOCUMENTS, "\\My Games\\" SAVE_FOLDER_NAME "\\SFSE\\Logs\\chronomarker.txt");
+		REL::IDDatabase::get();
 
 		myPluginHandle = sfse->GetPluginHandle();
 		auto msgIntf = (SFSEMessagingInterface*)sfse->QueryInterface(kInterface_Messaging);

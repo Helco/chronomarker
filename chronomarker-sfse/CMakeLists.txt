@@ -42,6 +42,8 @@ target_compile_definitions(
 file(GLOB sources CONFIGURE_DEPENDS sfse/sfse/*.cpp)
 target_sources(${PROJECT_NAME} PUBLIC
     main.cpp
+	commonlibsf-rel/VersionDatabase.h
+	commonlibsf-rel/VersionDatabase.cpp
     ${sources}
 )
 
