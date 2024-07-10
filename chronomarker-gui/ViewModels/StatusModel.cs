@@ -96,12 +96,43 @@ internal class StatusModel : ViewModelBase
                 Raise(nameof(LocalTime));
                 break;
 
+            case PersonalEffectsMessage msg:
+                HasCardioEffect = HasSkeletalEffect = HasNervousEffect = HasDigestiveEffect = HasMiscEffect = false;
+                foreach (var effect in msg.aPersonalEffects)
+                {
+                    switch(TinyProtocol.PersonalEffectFromIconName(effect.sEffectIcon))
+                    {
+                        case TinyProtocol.PersonalEffectType.Cardio: HasCardioEffect = true; break;
+                        case TinyProtocol.PersonalEffectType.Skeletal: HasSkeletalEffect = true; break;
+                        case TinyProtocol.PersonalEffectType.Nervous: HasNervousEffect = true; break;
+                        case TinyProtocol.PersonalEffectType.Digestive: HasDigestiveEffect = true; break;
+                        case TinyProtocol.PersonalEffectType.Misc: HasMiscEffect = true; break;
+                    }
+                }
+                Raise(nameof(HasCardioEffect), nameof(HasSkeletalEffect), nameof(HasNervousEffect), nameof(HasDigestiveEffect), nameof(HasMiscEffect));
+                break;
+
+            case EnvironmentEffectsMessage msg:
+                HasRadiationEffect = HasThermalEffect = HasAirborneEffect = HasCorrosiveEffect = false;
+                foreach (var effect in msg.aEnvironmentEffects)
+                {
+                    switch(TinyProtocol.EnvEffectFromIconName(effect.sEffectIcon))
+                    {
+                        case TinyProtocol.EnvEffectType.Radiation: HasRadiationEffect = true; break;
+                        case TinyProtocol.EnvEffectType.Thermal: HasThermalEffect = true; break;
+                        case TinyProtocol.EnvEffectType.Airborne: HasAirborneEffect = true; break;
+                        case TinyProtocol.EnvEffectType.Corrosive: HasCorrosiveEffect = true; break;
+                    }
+                }
+                Raise(nameof(HasRadiationEffect), nameof(HasThermalEffect), nameof(HasAirborneEffect), nameof(HasCorrosiveEffect));
+                break;
+
             case AlertsMessage msg:
                 foreach (var alert in msg.aAlerts)
                 {
                     Alerts.Insert(0, new()
                     {
-                        EffectIcon = alert.sEffectIcon,
+                        EffectIcon = TinyProtocol.AlertIconFromName(alert.sEffectIcon)?.ToString() ?? "<unknown>",
                         AlertText = alert.sAlertText,
                         AlertSubText = alert.sAlertSubText,
                         IsPositive = alert.bIsPositive

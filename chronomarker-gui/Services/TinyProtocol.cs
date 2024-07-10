@@ -81,6 +81,9 @@ internal class TinyProtocol
     private const int PlayerFlagBits = 3;
     private const int PlanetNameCountBits = 4;
     private const int LocationNameCountBits = 5;
+    private const int EffectBits = 3;
+    private const int AlertIconBits = 4;
+    private const int AlertTextBits = 5;
 
     private enum ProviderMessage
     {
@@ -94,10 +97,8 @@ internal class TinyProtocol
         PlanetStats,
         LocalTime,
         LocationName,
-        AddPersonalEffect,
-        DelPersonalEffect,
-        AddEnvEffect,
-        DelEnvEffect,
+        SetPersonalEffects,
+        SetEnvEffects,
         PositiveAlert,
         NegativeAlert
     }
@@ -109,22 +110,68 @@ internal class TinyProtocol
         NeedEverything = 2,
     }
 
-    private enum PersonalEffectType
+    public enum PersonalEffectType
     {
-        Cardio = 0,
+        Cardio,
         Skeletal,
         Nervous,
         Digestive,
         Misc
     }
+    public static PersonalEffectType? PersonalEffectFromIconName(string iconName) => iconName switch
+    {
+        "PersonalEffect_CardioRespiratoryCirculatory" => PersonalEffectType.Cardio,
+        "PersonalEffect_SkeletalMuscular" => PersonalEffectType.Skeletal,
+        "PersonalEffect_NervousSystem" => PersonalEffectType.Nervous,
+        "PersonalEffect_DigestiveImmune" => PersonalEffectType.Digestive,
+        "PersonalEffect_Misc" => PersonalEffectType.Misc,
+        _ => null
+    };
 
-    private enum EnvEffectType
+    public enum EnvEffectType
     {
         Radiation = 0,
         Thermal,
         Airborne,
         Corrosive
     }
+
+    public static EnvEffectType? EnvEffectFromIconName(string iconName) => iconName switch
+    {
+        "HazardEffect_Radiation" => EnvEffectType.Radiation,
+        "HazardEffect_Thermal" => EnvEffectType.Thermal,
+        "HazardEffect_Airborne" => EnvEffectType.Airborne,
+        "HazardEffect_Corrosive" => EnvEffectType.Corrosive,
+        _ => null
+    };
+
+    public enum AlertIcon
+    {
+        Radiation,
+        Thermal,
+        Airborne,
+        Corrosive,
+        Cardio,
+        Skeletal,
+        Nervous,
+        Digestive,
+        Misc,
+        Restore
+    }
+    public static AlertIcon? AlertIconFromName(string iconName) => iconName.Replace("_Positive", "").Replace("_Negative", "") switch
+    {
+        "HazardEffect_Radiation" => AlertIcon.Radiation,
+        "HazardEffect_Thermal" => AlertIcon.Thermal,
+        "HazardEffect_Airborne" => AlertIcon.Airborne,
+        "HazardEffect_Corrosive" => AlertIcon.Corrosive,
+        "HazardEffect_RestoreSoak" => AlertIcon.Restore,
+        "PersonalEffect_CardioRespiratoryCirculatory" => AlertIcon.Cardio,
+        "PersonalEffect_SkeletalMuscular" => AlertIcon.Skeletal,
+        "PersonalEffect_NervousSystem" => AlertIcon.Nervous,
+        "PersonalEffect_DigestiveImmune" => AlertIcon.Digestive,
+        "PersonalEffect_Misc" => AlertIcon.Misc,
+        _ => null
+    };
 
     [Flags]
     private enum PlayerFlags
@@ -292,21 +339,52 @@ internal class TinyProtocol
         });
     }
 
-    /*
-        AddPersonalEffect,
-        DelPersonalEffect,
-        AddEnvEffect,
-        DelEnvEffect,
-        PositiveAlert,
-        NegativeAlert*/
+    private void QueueEffects<TEnum>(ProviderMessage messageType, IReadOnlyList<TEnum> newValues, List<TEnum> oldValues, bool doCheck) where TEnum : Enum
+    {
+        if (doCheck && oldValues.SequenceEqual(newValues))
+            return;
+        if (!ReferenceEquals(oldValues, newValues))
+        {
+            oldValues.Clear();
+            oldValues.AddRange(newValues);
+        }
+        AddMessage(messageType, () =>
+        {
+            int sendCount = Math.Min(newValues.Count, (1 << EffectBits) - 1);
+            bitStream.Write(sendCount, EffectBits);
+            foreach (var value in newValues.Take(sendCount))
+                bitStream.Write(value.GetHashCode(), EffectBits);
+        });
+    }
+
+    private void QueuePersonalEffects(IReadOnlyList<PersonalEffectType> effects, bool doCheck) =>
+        QueueEffects(ProviderMessage.SetPersonalEffects, effects, personalEffects, doCheck);
+
+    private void QueueEnvEffects(IReadOnlyList<EnvEffectType> effects, bool doCheck) =>
+        QueueEffects(ProviderMessage.SetEnvEffects, effects, envEffects, doCheck);
+
+    private void QueueAlert(Alert alert)
+    {
+        if (AlertIconFromName(alert.sEffectIcon) is not AlertIcon icon)
+            return;
+        AddMessage(alert.bIsPositive ? ProviderMessage.PositiveAlert : ProviderMessage.NegativeAlert, () =>
+        {
+            bitStream.Write((int)icon, AlertIconBits);
+            bitStream.Write(alert.sAlertText, AlertTextBits);
+            bitStream.Write(alert.sAlertSubText, AlertTextBits);
+        });
+    }
 
     private void AddMessage(ProviderMessage message, Action writeMessage)
     {
-        int previousI = queuedMessages.FindIndex(t => t.type == message);
-        if (previousI >= 0)
+        if (message is not ProviderMessage.NegativeAlert or ProviderMessage.PositiveAlert)
         {
-            queuedMessages.RemoveAt(previousI);
-            ReconstructPacket();
+            int previousI = queuedMessages.FindIndex(t => t.type == message);
+            if (previousI >= 0)
+            {
+                queuedMessages.RemoveAt(previousI);
+                ReconstructPacket();
+            }
         }
 
         writeMessage();
