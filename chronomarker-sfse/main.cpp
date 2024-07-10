@@ -72,25 +72,35 @@ static_assert(sizeof(UIValue<double>) == 32);
 static_assert(sizeof(UIValue<unsigned int>) == 32);
 static_assert(sizeof(UIValue<BSFixedStringCS>) == 32);
 
-template<typename Me, uintptr_t ctorAddress_, uintptr_t callAddress_>
+void *hook5Call(BranchTrampoline &trampoline, uint64_t id, uint64_t offset, void *hookTarget)
+{
+	auto baseOffset = REL::IDDatabase::get().id2offset(id);
+	auto mappedOffset = reinterpret_cast<byte *>(baseOffset + RelocationManager::s_baseAddr);
+	if (*mappedOffset != 0xff)
+		report_and_fail("Did not find CALL instruction, was the game upgraded but not the Chronomarker mod?"sv);
+	int32_t callOffset = *(int32_t *)(mappedOffset + 1);
+	auto originalTarget = mappedOffset + 5 + callOffset;
+	trampoline.write5Call((uintptr_t)mappedOffset, (uintptr_t)hookTarget);
+	return originalTarget;
+}
+
+template<typename Me, uint64_t id, uint64_t offset>
 struct DataModelHooks {
 	inline static Me *_instance = nullptr;
 
 	static Me *MyCtor(Me *thiz) {
 		_instance = thiz;
 		shouldSendAllEvents = true;
-		return (*ctor)(thiz);
+		return ctor(thiz);
 	}
 
 	static void hook(BranchTrampoline &trampoline) {
-		// TODO: Add chainable call instead
-		trampoline.write5Call(callAddress, (uintptr_t)MyCtor);
+		ctor = (decltype(ctor))hook5Call(trampoline, id, offset, MyCtor);
 	}
 
 	static Me *instance() { return _instance; }
 
-	inline static RelocPtr<decltype(MyCtor)> ctor{ ctorAddress_ };
-	inline static RelocAddr<uintptr_t> callAddress{ callAddress_ };
+	inline static decltype(MyCtor)* ctor = nullptr;
 };
 
 enum class EventType : byte {
@@ -103,7 +113,7 @@ enum class EventType : byte {
 };
 
 struct PlayerFrequentDataModel :
-	DataModelHooks<PlayerFrequentDataModel, 0x219A9E0, 0x219ADAC> {
+	DataModelHooks<PlayerFrequentDataModel, 134825, 0x14219AE3C - 0x14219AC84> {
 	static constexpr auto EventName = "PlayerFrequentData"sv;
 	static constexpr auto EventType = EventType::PlayerFrequent;
 
@@ -326,7 +336,7 @@ struct EnvironmentAlertsDataModel {
 static_assert(sizeof(EnvironmentAlertsDataModel) == 208);
 
 struct HUDDataModel
-	: DataModelHooks<HUDDataModel, 0x2265158, 0x2257EC2> {
+	: DataModelHooks<HUDDataModel, 138166, 0x142257F52 - 0x142257F14> {
 	char gap0[7160];
 	char env_gap0[16];
 	LocalEnvironmentDataModel localEnv;
@@ -371,6 +381,8 @@ struct MyAlert {
 };
 
 struct OnInitAlert {
+	// hooking onto AlertDataModel_setMembers which is called a couple times
+
 	static void *myInitAlert(byte* alertPtr) {
 		auto *alert = (AlertDataModel *)(alertPtr + 40);
 		MyAlert myAlert;
@@ -383,26 +395,17 @@ struct OnInitAlert {
 			alerts.push_back(std::move(myAlert));
 		}
 		dirtyEvents |= 1u << (byte)EventType::Alerts;
-
-		/*std::stringstream ss;
-		ss << "Alert: " << alert->sEffectIcon.value.c_str() << " (" << alert->sAlertText.value.c_str() << ")" << " (" << alert->sAlertSubText.value.c_str() << ") " << alert->bIsPositive.value;
-		auto str = ss.str();
-		OutputDebugStringA(str.c_str());*/
 		return (*func)(alertPtr);
 	}
 
-	inline static RelocAddr<uintptr_t> callAddress1{ 0x215CF3D };
-	inline static RelocAddr<uintptr_t> callAddress2{ 0x215D2A2 };
-	inline static RelocAddr<uintptr_t> callAddress3{ 0x215EFAE };
-	inline static const RelocPtr<decltype(myInitAlert)> func{ 0x21604D4 };
+	inline static decltype(myInitAlert) *func = nullptr;
 	inline static std::vector<MyAlert> alerts;
 	inline static std::mutex alertsMutex;
 
 	static void hook(BranchTrampoline &trampoline) {
-		// TODO: also here
-		trampoline.write5Call(callAddress1, (uintptr_t)myInitAlert);
-		trampoline.write5Call(callAddress2, (uintptr_t)myInitAlert);
-		trampoline.write5Call(callAddress3, (uintptr_t)myInitAlert);
+		func = (decltype(func))hook5Call(trampoline, 133649, 0x14215CFCD - 0x14215CF60, myInitAlert);
+		hook5Call(trampoline, 133655, 0x14215D332 - 0x14215D2A4, myInitAlert);
+		hook5Call(trampoline, 133697, 0x14215F03E - 0x14215E870, myInitAlert);
 	}
 
 	static void serialize(VectorStream &stream) {
@@ -462,12 +465,10 @@ struct OnFlushHook {
 		}
 	}
 
-	inline static RelocAddr<uintptr_t> callAddress{ 0x302F6DF };
-	inline static const RelocPtr<decltype(myInvokeOnFlush)> func{ 0x2039ABC };
+	inline static decltype(myInvokeOnFlush) *func = nullptr;
 
 	static void hook(BranchTrampoline &trampoline) {
-		// TODO: also here
-		trampoline.write5Call(callAddress, (uintptr_t)myInvokeOnFlush);
+		func = (decltype(func))hook5Call(trampoline, 187030, 0x143028534 - 0x1430282B8, myInvokeOnFlush);
 	}
 };
 
@@ -534,9 +535,9 @@ extern "C" {
 		"chronomarker-sfse",
 		"Helco",
 
-		1,	// address independence
-		1,	//  structure independence
-		{ RUNTIME_VERSION_1_12_32, 0 },	// compatible with 1.7.23 and that's it
+		SFSEPluginVersionData::kAddressIndependence_AddressLibrary,
+		SFSEPluginVersionData::kStructureIndependence_1_8_86_Layout,
+		{ RUNTIME_VERSION_1_12_36, 0 },	// compatible with 1.7.23 and that's it
 
 		0,	// works with any version of the script extender. you probably do not need to put anything here
 		0, 0,	// set these reserved fields to 0
