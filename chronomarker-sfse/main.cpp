@@ -75,9 +75,9 @@ static_assert(sizeof(UIValue<BSFixedStringCS>) == 32);
 void *hook5Call(BranchTrampoline &trampoline, uint64_t id, uint64_t offset, void *hookTarget)
 {
 	auto baseOffset = REL::IDDatabase::get().id2offset(id);
-	auto mappedOffset = reinterpret_cast<byte *>(baseOffset + RelocationManager::s_baseAddr);
-	if (*mappedOffset != 0xff)
-		report_and_fail("Did not find CALL instruction, was the game upgraded but not the Chronomarker mod?"sv);
+	auto mappedOffset = reinterpret_cast<byte *>(baseOffset + RelocationManager::s_baseAddr) + offset;
+	if (*mappedOffset != 0xe8)
+		report_and_fail("Did not find CALL rel32 instruction, was the game upgraded but not the Chronomarker mod?"sv);
 	int32_t callOffset = *(int32_t *)(mappedOffset + 1);
 	auto originalTarget = mappedOffset + 5 + callOffset;
 	trampoline.write5Call((uintptr_t)mappedOffset, (uintptr_t)hookTarget);
@@ -468,7 +468,7 @@ struct OnFlushHook {
 	inline static decltype(myInvokeOnFlush) *func = nullptr;
 
 	static void hook(BranchTrampoline &trampoline) {
-		func = (decltype(func))hook5Call(trampoline, 187030, 0x143028534 - 0x1430282B8, myInvokeOnFlush);
+		func = (decltype(func))hook5Call(trampoline, 187162, 0x14302F6DF - 0x14302F44C, myInvokeOnFlush);
 	}
 };
 

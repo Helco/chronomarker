@@ -147,6 +147,7 @@ internal class TinyProtocol
 
     public enum AlertIcon
     {
+        None,
         Radiation,
         Thermal,
         Airborne,
@@ -170,6 +171,7 @@ internal class TinyProtocol
         "PersonalEffect_NervousSystem" => AlertIcon.Nervous,
         "PersonalEffect_DigestiveImmune" => AlertIcon.Digestive,
         "PersonalEffect_Misc" => AlertIcon.Misc,
+        "no icon" => AlertIcon.None,
         _ => null
     };
 
