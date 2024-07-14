@@ -57,7 +57,7 @@ internal class UShortBitStream
         Write(str.Length, countBits);
         for (int i = 0; i < str.Length; i++)
         {
-            int ch = str[i] - 32;
+            int ch = char.ToUpperInvariant(str[i]) - 32;
             if (ch < 0 || ch > 63)
                 ch = 0;
             Write(ch, 6);
@@ -213,6 +213,44 @@ internal class TinyProtocol
     {
         lock(mutex)
         {
+            switch(message)
+            {
+                case PlayerFrequentMessage msg:
+                    QueueO2(msg.fOxygen / msg.fMaxO2CO2, true);
+                    QueueCO2(msg.fCarbonDioxide / msg.fMaxO2CO2, true);
+                    break;
+                case LocalEnvironmentMessage msg:
+                    QueuePlanetName(msg.sBodyName, true);
+                    QueueLocationName(msg.sLocationName, true);
+                    QueuePlanetStats(msg.fGravity, msg.fTemperature, msg.fOxygenPercent, true);
+                    QueuePlayerFlags(default(PlayerFlags) |
+                        (msg.bInSpaceship ? PlayerFlags.IsInSpaceship : default) |
+                        (msg.bIsScanning ? PlayerFlags.IsScanning : default) |
+                        (msg.bIsLanded ? PlayerFlags.IsLanded : default),
+                        true);
+                    break;
+                case LocalEnvFrequentMessage msg:
+                    QueueLocalTime(msg.fLocalPlanetTime, true);
+                    break;
+                case PersonalEffectsMessage msg:
+                    QueuePersonalEffects(msg.aPersonalEffects
+                        .Select(e => PersonalEffectFromIconName(e.sEffectIcon))
+                        .Where(e => e != null)
+                        .Select(e => e!.Value)
+                        .ToArray(), true);
+                    break;
+                case EnvironmentEffectsMessage msg:
+                    QueueEnvEffects(msg.aEnvironmentEffects
+                        .Select(e => EnvEffectFromIconName(e.sEffectIcon))
+                        .Where(e => e != null)
+                        .Select(e => e!.Value)
+                        .ToArray(), true);
+                    break;
+                case AlertsMessage msg:
+                    foreach (var alert in msg.aAlerts)
+                        QueueAlert(alert);
+                    break;
+            }
         }
     }
 
@@ -228,7 +266,7 @@ internal class TinyProtocol
                 case WatchMessage.INeedVersion:
                     if (message.Length < 2)
                         logService.Log("To small INeedVersion message from watch");
-                    else if (message[0] != CurrentVersion)
+                    else if (message[1] != CurrentVersion)
                         logService.Log("Watch wants other version of protocol. Too bad. It won't work.");
                     QueueEverything();
                     break;
@@ -272,13 +310,14 @@ internal class TinyProtocol
             bitStream.Write(planetTemp, TemperatureBits);
             bitStream.Write(planetOxygen, OxygenBits);
         });
-
+        FlushPendingMessages();
     }
 
     private void QueueInteger(ProviderMessage type, int newValue, ref int oldValue, int bits, bool doCheck)
     {
         if (doCheck && newValue == oldValue)
             return;
+        newValue = Math.Clamp(newValue, 0, (1 << bits) - 1);
         oldValue = newValue;
         AddMessage(type, () => bitStream.Write(newValue, bits));
     }
@@ -389,12 +428,12 @@ internal class TinyProtocol
             }
         }
 
-        writeMessage();
+        WriteMessage(message, writeMessage);
         if (bitStream.ByteSize > MaxMessageSize)
         {
             ReconstructPacket();
             FlushPendingMessages();
-            writeMessage();
+            WriteMessage(message, writeMessage);
             if (bitStream.ByteSize > MaxMessageSize)
                 throw new ArgumentException("Packet is too large");
         }
@@ -407,9 +446,12 @@ internal class TinyProtocol
     private void ReconstructPacket()
     {
         bitStream.Clear();
-        foreach (var (_, reconstructMessage) in queuedMessages)
-            reconstructMessage();
+        foreach (var tuple in queuedMessages)
+            WriteMessage(tuple);
     }
+
+    private void WriteMessage((ProviderMessage type, Action writeBody) t) =>
+        WriteMessage(t.type, t.writeBody);
 
     private void WriteMessage(ProviderMessage type, Action writeBody)
     {

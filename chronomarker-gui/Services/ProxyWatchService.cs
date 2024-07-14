@@ -18,7 +18,7 @@ internal class ProxyWatchService : IWatchService
     public ProxyWatchService(IServiceProvider services)
     {
         this.services = services;
-        SetWatchType(WatchType.LPV6);
+        SetWatchType(WatchType.DebugTinyProtocol);
     }
 
     private void HandleStatusChanged(WatchStatus status) {
@@ -34,6 +34,7 @@ internal class ProxyWatchService : IWatchService
             switch(newType)
             {
                 case WatchType.LPV6: impl = ActivatorUtilities.CreateInstance<LPV6Service>(services); break;
+                case WatchType.DebugTinyProtocol: impl = ActivatorUtilities.CreateInstance<DebugTinyProtocolService>(services); break;
                 default: throw new NotImplementedException($"Did not implement watch instanciation for {newType}");
             }
             if (impl.Status != impl.Status)

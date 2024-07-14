@@ -17,7 +17,11 @@ internal enum WatchStatus
 
 internal enum WatchType
 {
-    LPV6
+    LPV6,
+
+#if DEBUG
+    DebugTinyProtocol
+#endif
 }
 
 internal interface IWatchService : IDisposable
