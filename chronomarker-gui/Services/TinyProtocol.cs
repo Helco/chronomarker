@@ -201,7 +201,8 @@ internal class TinyProtocol
     private string planetName = "", locationName = "";
     private readonly List<PersonalEffectType> personalEffects = new(5);
     private readonly List<EnvEffectType> envEffects = new(4);
-    private readonly List<Alert> queuedAlerts = new(4);
+
+    public bool HasPendingMessages => queuedMessages.Count > 0;
 
     public TinyProtocol(LogService logService, QueuePacketHandler queuePacket)
     {
@@ -292,25 +293,28 @@ internal class TinyProtocol
         }
     }
 
-    private void QueueEverything()
+    public void QueueEverything()
     {
-        bitStream.Clear();
-        queuedMessages.Clear();
-        QueueReset();
-        QueueInteger(ProviderMessage.O2, o2, ref o2, O2CO2Bits, false);
-        QueueInteger(ProviderMessage.CO2, co2, ref co2, O2CO2Bits, false);
-        QueueInteger(ProviderMessage.Heading, heading, ref heading, HeadingBits, false);
-        QueueInteger(ProviderMessage.Heading, playerFlags, ref playerFlags, PlayerFlagBits, false);
-        QueueInteger(ProviderMessage.Heading, localTime, ref localTime, LocalTimeBits, false);
-        QueuePlanetName(planetName, false);
-        QueueLocationName(locationName, false);
-        AddMessage(ProviderMessage.PlanetStats, () =>
+        lock (mutex)
         {
-            bitStream.Write(planetGravity, GravityBits);
-            bitStream.Write(planetTemp, TemperatureBits);
-            bitStream.Write(planetOxygen, OxygenBits);
-        });
-        FlushPendingMessages();
+            bitStream.Clear();
+            queuedMessages.Clear();
+            QueueReset();
+            QueueInteger(ProviderMessage.O2, o2, ref o2, O2CO2Bits, false);
+            QueueInteger(ProviderMessage.CO2, co2, ref co2, O2CO2Bits, false);
+            QueueInteger(ProviderMessage.Heading, heading, ref heading, HeadingBits, false);
+            QueueInteger(ProviderMessage.Heading, playerFlags, ref playerFlags, PlayerFlagBits, false);
+            QueueInteger(ProviderMessage.Heading, localTime, ref localTime, LocalTimeBits, false);
+            QueuePlanetName(planetName, false);
+            QueueLocationName(locationName, false);
+            AddMessage(ProviderMessage.PlanetStats, () =>
+            {
+                bitStream.Write(planetGravity, GravityBits);
+                bitStream.Write(planetTemp, TemperatureBits);
+                bitStream.Write(planetOxygen, OxygenBits);
+            });
+            FlushPendingMessages();
+        }
     }
 
     private void QueueInteger(ProviderMessage type, int newValue, ref int oldValue, int bits, bool doCheck)
