@@ -369,7 +369,7 @@ internal class TinyProtocol
     private void QueuePlanetStats(float gravity, float temperature, float oxygen, bool doCheck)
     {
         int gravityI = BitClamp(gravity * 100f, GravityBits);
-        int temperatureI = BitClamp(temperature - TemperatureZero, TemperatureZero);
+        int temperatureI = BitClamp(temperature - TemperatureZero, TemperatureBits);
         int oxygenI = BitClamp(oxygen * 100f, OxygenBits);
         if (doCheck && planetGravity == gravityI && planetTemp == temperatureI && planetOxygen == oxygenI)
             return;
