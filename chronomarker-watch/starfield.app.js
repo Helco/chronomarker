@@ -59,7 +59,10 @@ Bangle.setLCDTimeout(0)
 const maxO2CO2 = 63
 const o2StartAngle = 1.5 * 3.141592653
 const co2StartAngle = 0.5 * 3.141592653
-function drawO2CO2 (o2, co2) {
+function drawO2CO2 (o2, co2, clearFirst) {
+  if (clearFirst == true) {
+    g.setColor('#111').drawSlice(co2StartAngle, o2StartAngle, 73, 96);
+  }
   if (o2 > 0 && co2 > 0) o2--, co2--
   if (o2 > 0)
     g.setColor('#fff').drawSlice(
@@ -194,7 +197,7 @@ function drawName (name, angle) {
     drawCircledChar(i, curAngle)
 }
 
-const state = {
+const game = {
   o2: maxO2CO2,
   co2: 0,
   heading: 0,
@@ -212,22 +215,22 @@ function fullDraw () {
   g.clear(false)
   g.drawBackground()
   g.drawTicks(0.3)
-  drawO2CO2(state.o2, state.co2)
+  drawO2CO2(game.o2, game.co2)
   g.setFontArchitekt12(1)
   g.setColor('#fff')
   g.drawString('O2', 120 - 92, 104)
   g.drawString('CO2', 120 + 73, 104)
 
-  drawMoon(state.time / 63)
+  drawMoon(game.time / 63)
   g.drawImage(imagePlanet, 70, 70)
 
   g.setColor('#fff')
-  drawName(state.bodyName, 0)
+  drawName(game.bodyName, 0)
 
-  for (let i = 0; i < 5 && state.personalEffects[i] >= 0; i++)
-    drawPersonalEffect(i, state.personalEffects[i]);
-  for (let i = 0; i < 4 && state.envEffects[i] >= 0; i++)
-    drawEnvEffect(i, state.envEffects[i]);
+  for (let i = 0; i < 5 && game.personalEffects[i] >= 0; i++)
+    drawPersonalEffect(i, game.personalEffects[i]);
+  for (let i = 0; i < 4 && game.envEffects[i] >= 0; i++)
+    drawEnvEffect(i, game.envEffects[i]);
 }
 
 class BitStream {
@@ -324,24 +327,24 @@ function readPacket (packet) {
         case 0:
           return changeBits;
         case 1: // reset
-          state.personalEffects.fill(-1);
-          state.envEffects.fill(-1);
+          game.personalEffects.fill(-1);
+          game.envEffects.fill(-1);
           break
-        case 2: state.o2 = stream.readf(6); changeBits |= CBit_O2CO2; break
-        case 3: state.co2 = stream.readf(6); changeBits |= CBit_O2CO2; break
-        case 4: state.heading = stream.readf(7); changeBits |= CBit_Heading; break
-        case 5: state.flags = stream.read(3); changeBits |= CBit_PlayerFlags; break
-        case 8: state.time = stream.readf(6); changeBits |= CBit_Time; break
-        case 6: state.bodyName = stream.reads(4); changeBits |= CBit_Names; break
-        case 9: state.locationName = stream.reads(5); changeBits |= CBit_Names; break
+        case 2: game.o2 = stream.readf(6); changeBits |= CBit_O2CO2; break
+        case 3: game.co2 = stream.readf(6); changeBits |= CBit_O2CO2; break
+        case 4: game.heading = stream.readf(7); changeBits |= CBit_Heading; break
+        case 5: game.flags = stream.read(3); changeBits |= CBit_PlayerFlags; break
+        case 8: game.time = stream.readf(6); changeBits |= CBit_Time; break
+        case 6: game.bodyName = stream.reads(4); changeBits |= CBit_Names; break
+        case 9: game.locationName = stream.reads(5); changeBits |= CBit_Names; break
         case 7:
-          state.planetGrav = stream.readf(8);
-          state.planetTemp = stream.read(11) - 294;
-          state.planetOxygen = stream.read(7);
+          game.planetGrav = stream.readf(8);
+          game.planetTemp = stream.read(11) - 294;
+          game.planetOxygen = stream.read(7);
           changeBits |= CBit_PlanetStats;
           break
-        case 10: readEffects(state.personalEffects, 5, stream); changeBits |= CBit_PersonalEffects; break
-        case 11: readEffects(state.envEffects, 4, stream); changeBits |= CBit_EnvEffects; break;
+        case 10: readEffects(game.personalEffects, 5, stream); changeBits |= CBit_PersonalEffects; break
+        case 11: readEffects(game.envEffects, 4, stream); changeBits |= CBit_EnvEffects; break;
         case 12:
         case 13:
           console.log(
@@ -373,10 +376,20 @@ function readPacket (packet) {
   return changeBits;
 }
 
+let isFirst = true;
+
 function handlePacket(packet) {
+  Bangle.setLCDTimeout(0)
   const changeBits = readPacket(packet);
-  fullDraw();
-  console.log(process.memory());
+  if (isFirst) {
+  fullDraw(); isFirst = false;
+  }
+  else
+  {
+    g.setBgColor('#111')
+  drawO2CO2(game.o2, game.co2, true)
+  }
+  //console.log(process.memory());
 }
 
 function exitTo (nextApp) {

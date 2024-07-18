@@ -11,7 +11,7 @@ namespace Chronomarker.Services;
 
 internal class LPV6Service : IWatchService
 {
-    private class Connection : IDisposable
+    private class Connection : IDisposable, InfrequentPacketScheduler.IAdapter
     {
         private bool disposedValue;
         public bool CanBeUsed => !disposedValue && !Cancellation.IsCancellationRequested;
@@ -24,6 +24,17 @@ internal class LPV6Service : IWatchService
         public DateTime LastHeartbeat { get; private set; } = DateTime.UtcNow;
         public TimeSpan TimeSinceHeartbeat => DateTime.UtcNow - LastHeartbeat;
 
+        public TinyProtocol Protocol { get; }
+        public InfrequentPacketScheduler Scheduler { get; }
+        public bool HasPendingMessages => Protocol.HasPendingMessages;
+
+        public Connection(LogService logService)
+        {
+            Scheduler = new(this, logService);
+            Protocol = new(logService, Scheduler.QueuePacket);
+            Protocol.HandleWatchMessage([1, 0]);
+        }
+
         public void MarkHeartbeat() => LastHeartbeat = DateTime.UtcNow;
 
         protected virtual void Dispose(bool disposing)
@@ -32,6 +43,7 @@ internal class LPV6Service : IWatchService
             {
                 if (disposing)
                 {
+                    Scheduler.Dispose();
                     Service.Dispose();
                     Device.Dispose();
                 }
@@ -45,8 +57,19 @@ internal class LPV6Service : IWatchService
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
+
+        public void FlushPendingMessages() => Protocol.FlushPendingMessages();
+        public void QueueEverything() => Protocol.QueueEverything();
+
+        public Task SendPacket(byte[] packet)
+        {
+            if (CanBeUsed)
+                return Characteristic.WriteValueAsync(packet.AsBuffer(), GattWriteOption.WriteWithoutResponse).AsTask();
+            return Task.CompletedTask;
+        }
     }
 
+    private readonly LogService logService;
     private readonly Action<string> logMessage;
     private readonly object runLock = new();
     private Connection? currentConnection = null;
@@ -71,7 +94,12 @@ internal class LPV6Service : IWatchService
 
     public bool PrintWatchLog { get; set; } // non-functional
 
-    public LPV6Service(LogService logService) => logMessage = logService.Log;
+    public LPV6Service(LogService logService, IGameService gameService)
+    {
+        this.logService = logService;
+        logMessage = logService.Log;
+        gameService.OnMessage += HandleMessage;
+    }
 
     public void Start()
     {
@@ -98,6 +126,15 @@ internal class LPV6Service : IWatchService
             cancellation = null;
             runTask = null;
             Status = WatchStatus.Initial;
+        }
+    }
+
+    private void HandleMessage(IGameMessage message)
+    {
+        lock(runLock)
+        {
+            if (currentConnection?.CanBeUsed is true)
+                currentConnection.Protocol.HandleGameMessage(message);
         }
     }
 
@@ -182,7 +219,7 @@ internal class LPV6Service : IWatchService
                 throw new ConnectionException("Characteristic notification could not be set");
 
             // Connection
-            var connection = new Connection()
+            var connection = new Connection(logService)
             {
                 Address = address,
                 Device = device,
@@ -235,6 +272,7 @@ internal class LPV6Service : IWatchService
         if (!connection.CanBeUsed)
             return;
         connection.MarkHeartbeat();
+        connection.Protocol.HandleWatchMessage(ev.CharacteristicValue.ToArray());
     }
 
     private TimeSpan Timeout = TimeSpan.FromSeconds(5);

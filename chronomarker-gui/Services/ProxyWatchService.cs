@@ -18,7 +18,7 @@ internal class ProxyWatchService : IWatchService
     public ProxyWatchService(IServiceProvider services)
     {
         this.services = services;
-        SetWatchType(WatchType.DebugTinyProtocol);
+        SetWatchType(WatchType.LPV6);
     }
 
     private void HandleStatusChanged(WatchStatus status) {
