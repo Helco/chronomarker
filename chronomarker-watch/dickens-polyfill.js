@@ -331,7 +331,6 @@ E205
 ED9C2987235DCB2509B0692B02250900
 `.split("\n");
 
-const fuck = new ArrayBuffer(1);
 const msgDelay = 500;
 let msgI = -((3000 / msgDelay)|0);
 const msgInt = setInterval(() =>
