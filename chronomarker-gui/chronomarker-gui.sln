@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "chronomarker-gui", "chronom
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "chronomarker-gui.Desktop", "..\chronomarker-gui.Desktop\chronomarker-gui.Desktop.csproj", "{A23EA9AD-F464-456C-B33B-A83CBDF01868}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPebble", "..\NetPebble\NetPebble.csproj", "{189BF491-E4CD-431E-A4BC-DE191D3260D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPebble.DevTest", "..\NetPebble.DevTest\NetPebble.DevTest.csproj", "{81394A48-9FD0-4A9C-BE08-8A09DC81A2F3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{A23EA9AD-F464-456C-B33B-A83CBDF01868}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A23EA9AD-F464-456C-B33B-A83CBDF01868}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A23EA9AD-F464-456C-B33B-A83CBDF01868}.Release|Any CPU.Build.0 = Release|Any CPU
+		{189BF491-E4CD-431E-A4BC-DE191D3260D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{189BF491-E4CD-431E-A4BC-DE191D3260D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{189BF491-E4CD-431E-A4BC-DE191D3260D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{189BF491-E4CD-431E-A4BC-DE191D3260D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81394A48-9FD0-4A9C-BE08-8A09DC81A2F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81394A48-9FD0-4A9C-BE08-8A09DC81A2F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81394A48-9FD0-4A9C-BE08-8A09DC81A2F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81394A48-9FD0-4A9C-BE08-8A09DC81A2F3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

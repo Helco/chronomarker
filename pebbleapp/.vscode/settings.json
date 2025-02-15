@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.ksy": "yaml",
+        "pebble.h": "c"
+    }
+}

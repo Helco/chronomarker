@@ -1,0 +1,23 @@
+{
+  "name": "chronomarker",
+  "author": "Helco",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Chronomarker",
+    "uuid": "4a022ac1-39ae-4903-b538-ea5c035a0e81",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "chalk"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "resources": {
+      "media": []
+    }
+  }
+}
