@@ -66,13 +66,18 @@ static void in_dropped_handler(AppMessageResult reason, void* context)
   APP_LOG(APP_LOG_LEVEL_WARNING, "Msg dropped: %s", translate_error(reason));
 }
 
+char s_text_buffer[64] = {0};
 static void in_received_handler(DictionaryIterator* received, void* context)
 {
   Tuple* tuple = dict_find(received, 16);
   if (tuple == NULL || tuple->type != TUPLE_UINT || tuple->length != 1)
     APP_LOG(APP_LOG_LEVEL_WARNING, "Msg received invalid");
   else
+  {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Msg received: %d", (int)tuple->value->uint8);
+    snprintf(s_text_buffer, 64, "%d", (int)tuple->value->uint8);
+    text_layer_set_text(s_text_layer, s_text_buffer);
+  }
 }
 
 static void prv_init(void) {
