@@ -16,6 +16,7 @@
 #include <sfse_common/Log.h>
 #include <sfse_common/DataStream.h>
 #include "commonlibsf-rel/VersionDatabase.h"
+#include "offsets.h"
 
 using namespace std::string_view_literals;
 
@@ -72,19 +73,20 @@ static_assert(sizeof(UIValue<double>) == 32);
 static_assert(sizeof(UIValue<unsigned int>) == 32);
 static_assert(sizeof(UIValue<BSFixedStringCS>) == 32);
 
-void *hook5Call(BranchTrampoline &trampoline, uint64_t id, uint64_t offset, void *hookTarget)
+void *hook5Call(BranchTrampoline &trampoline, C::ID id, C::Offset offset, void *hookTarget,
+	const std::source_location &sourceLocation = std::source_location::current())
 {
 	auto baseOffset = REL::IDDatabase::get().id2offset(id);
 	auto mappedOffset = reinterpret_cast<byte *>(baseOffset + RelocationManager::s_baseAddr) + offset;
 	if (*mappedOffset != 0xe8)
-		report_and_fail("Did not find CALL rel32 instruction, was the game upgraded but not the Chronomarker mod?"sv);
+		report_and_fail("Did not find CALL rel32 instruction, was the game upgraded but not the Chronomarker mod?"sv, sourceLocation);
 	int32_t callOffset = *(int32_t *)(mappedOffset + 1);
 	auto originalTarget = mappedOffset + 5 + callOffset;
 	trampoline.write5Call((uintptr_t)mappedOffset, (uintptr_t)hookTarget);
 	return originalTarget;
 }
 
-template<typename Me, uint64_t id, uint64_t offset>
+template<typename Me, C::ID id, C::Offset offset>
 struct DataModelHooks {
 	inline static Me *_instance = nullptr;
 
@@ -94,8 +96,9 @@ struct DataModelHooks {
 		return ctor(thiz);
 	}
 
-	static void hook(BranchTrampoline &trampoline) {
-		ctor = (decltype(ctor))hook5Call(trampoline, id, offset, MyCtor);
+	static void hook(BranchTrampoline &trampoline,
+		const std::source_location &sourceLocation = std::source_location::current()) {
+		ctor = (decltype(ctor))hook5Call(trampoline, id, offset, MyCtor, sourceLocation);
 	}
 
 	static Me *instance() { return _instance; }
@@ -113,7 +116,7 @@ enum class EventType : byte {
 };
 
 struct PlayerFrequentDataModel :
-	DataModelHooks<PlayerFrequentDataModel, 134825, 0x14219AE3C - 0x14219AC84> {
+	DataModelHooks<PlayerFrequentDataModel, C::ID_PlayerDataModels_ctor, C::Call_PlayerFrequentDataModel_ctor> {
 	static constexpr auto EventName = "PlayerFrequentData"sv;
 	static constexpr auto EventType = EventType::PlayerFrequent;
 
@@ -131,7 +134,7 @@ struct PlayerFrequentDataModel :
 		stream.w32(uDetectionLevel.value);
 	}
 
-	char garbage[72];
+	char garbage[C::Gap_PlayerFrequentDataModel_ToValues];
 	UIValue<float> fHealth;
 	UIValue<float> fMaxHealth;
 	UIValue<float> fStarPower;
@@ -145,7 +148,6 @@ struct PlayerFrequentDataModel :
 };
 
 struct LocalEnvironmentDataModel {
-	// : DataModelHooks<LocalEnvironmentDataModel, 0x2176604, 0x21768BA> {
 	static constexpr auto EventName = "LocalEnvironmentData"sv;
 	static constexpr auto EventType = EventType::LocalEnvironment;
 	static LocalEnvironmentDataModel *instance();
@@ -180,10 +182,9 @@ struct LocalEnvironmentDataModel {
 	UIValue<BSFixedStringCS> sLanguage;
 	char garbage2[16];
 };
-static_assert(sizeof(LocalEnvironmentDataModel) == 56 * 8);
+static_assert(sizeof(LocalEnvironmentDataModel) == C::Size_LocalEnvironmentData);
 
 struct LocalEnvFrequentDataModel {
-	// : DataModelHooks<LocalEnvFrequentDataModel, 0x21766C0, 0x21768CA> {
 	static constexpr auto EventName = "LocalEnvData_Frequent"sv;
 	static constexpr auto EventType = EventType::LocalEnvFrequent;
 	static LocalEnvFrequentDataModel *instance();
@@ -202,7 +203,7 @@ struct LocalEnvFrequentDataModel {
 	UIValue<float> fGalacticStandardTime;
 	char garbage2[16];
 };
-static_assert(sizeof(LocalEnvFrequentDataModel) == 192);
+static_assert(sizeof(LocalEnvFrequentDataModel) == C::Size_LocalEnvFrequentData);
 
 template<typename TValue> struct NestedUIValue {
 	char nestedUIValueGarbage[40];
@@ -259,7 +260,6 @@ struct AlertDataModel {
 static_assert(sizeof(NestedUIValue<AlertDataModel>) == 216);
 
 struct PersonalEffectsDataModel {
-	// : DataModelHooks<PersonalEffectsDataModel, 0x215D646, 0x215DD2B> {
 	static constexpr auto EventName = "PersonalEffectsData"sv;
 	static constexpr auto EventType = EventType::PersonalEffects;
 	static PersonalEffectsDataModel *instance();
@@ -274,13 +274,11 @@ struct PersonalEffectsDataModel {
 	UIValue<uint> uAlertTimeMs;
 	ArrayNestedUIValue<EffectDataModel> aPersonalEffects;
 };
-static_assert(sizeof(PersonalEffectsDataModel) == 240);
+static_assert(sizeof(PersonalEffectsDataModel) == C::Size_PersonalEffects);
 
 // Alerts are weird, the data is only temporarily stored in the ArrayNestedUIValue, so we take a different route altogether
 
 struct PersonalAlertsDataModel {
-	//static constexpr auto EventName = "PersonalAlertsData"sv;
-	//static constexpr auto EventType = EventType::PersonalAlerts;
 	static PersonalAlertsDataModel *instance();
 
 	void serialize(VectorStream &stream) {
@@ -292,7 +290,7 @@ struct PersonalAlertsDataModel {
 	char garbage[72];
 	ArrayNestedUIValue<AlertDataModel> aPersonalAlerts;
 };
-static_assert(sizeof(PersonalAlertsDataModel) == 208);
+static_assert(sizeof(PersonalAlertsDataModel) == C::Size_PersonalAlerts);
 
 struct EnvironmentEffectsDataModel {
 	static constexpr auto EventName = "EnvironmentEffectsData"sv;
@@ -317,11 +315,9 @@ struct EnvironmentEffectsDataModel {
 	UIValue<bool> bShouldPlayAlertAtFullSoak;
 	ArrayNestedUIValue<EffectDataModel> aEnvironmentEffects;
 };
-static_assert(sizeof(EnvironmentEffectsDataModel) == 368);
+static_assert(sizeof(EnvironmentEffectsDataModel) == C::Size_EnvironmentEffects);
 
 struct EnvironmentAlertsDataModel {
-	//static constexpr auto EventName = "EnvironmentAlertsData"sv;
-	//static constexpr auto EventType = EventType::EnvironmentAlerts;
 	static EnvironmentAlertsDataModel *instance();
 
 	void serialize(VectorStream &stream) {
@@ -333,24 +329,24 @@ struct EnvironmentAlertsDataModel {
 	char garbage[72];
 	ArrayNestedUIValue<AlertDataModel> aEnvironmentAlerts;
 };
-static_assert(sizeof(EnvironmentAlertsDataModel) == 208);
+static_assert(sizeof(EnvironmentAlertsDataModel) == C::Size_EnvironmentAlerts);
 
 struct HUDDataModel
-	: DataModelHooks<HUDDataModel, 138166, 0x142257F52 - 0x142257F14> {
-	char gap0[7160];
-	char env_gap0[16];
+	: DataModelHooks<HUDDataModel, C::ID_HUDDataModel_ctor, C::Call_HUDDataModel_ctor> {
+	char gap0[C::Gap_HUDDataModel_ToEnv];
+	char env_gap[C::Gap_LocalEnvModel_ToStaticUIData];
 	LocalEnvironmentDataModel localEnv;
 	LocalEnvFrequentDataModel localEnvFrequent;
-	char gap7816d[2344];
+	char gap1[C::Gap_HUDDataModel_AfterEnvToWatchEffects];
 	char watch_gap0[4176];
 	PersonalEffectsDataModel personalEffects;
 	PersonalAlertsDataModel personalAlerts;
 	EnvironmentEffectsDataModel envEffects;
 	EnvironmentAlertsDataModel envAlerts;
 };
-static_assert(offsetof(HUDDataModel, localEnv) == 7160 + 16);
-static_assert(offsetof(HUDDataModel, personalEffects) == 10160 + 4176);
-static_assert(offsetof(HUDDataModel, envAlerts) == 10160 + 4992);
+static_assert(offsetof(HUDDataModel, localEnv) == C::Gap_HUDDataModel_ToEnv + C::Gap_LocalEnvModel_ToStaticUIData);
+static_assert(offsetof(HUDDataModel, personalEffects) == C::Offset_HUDDataModel_ToWatchEffects + C::Offset_WatchEffects_ToPersonalEffects);
+static_assert(offsetof(HUDDataModel, envAlerts) == C::Offset_HUDDataModel_ToWatchEffects + C::Offset_WatchEffects_ToEnvironmentAlerts);
 
 #define HUDMODEL_INSTANCE(type,member) type *type::instance() { auto b = HUDDataModel::instance(); return b == nullptr ? nullptr : &b->member; }
 HUDMODEL_INSTANCE(LocalEnvironmentDataModel, localEnv);
@@ -403,9 +399,10 @@ struct OnInitAlert {
 	inline static std::mutex alertsMutex;
 
 	static void hook(BranchTrampoline &trampoline) {
-		func = (decltype(func))hook5Call(trampoline, 133649, 0x14215CFCD - 0x14215CF60, myInitAlert);
-		hook5Call(trampoline, 133655, 0x14215D332 - 0x14215D2A4, myInitAlert);
-		hook5Call(trampoline, 133697, 0x14215F03E - 0x14215E870, myInitAlert);
+		func = (decltype(func))
+		hook5Call(trampoline, C::ID_AlertDataModel_setMembers_0, C::Call_AlertDataModel_setMembers_0, myInitAlert);
+		hook5Call(trampoline, C::ID_AlertDataModel_setMembers_1, C::Call_AlertDataModel_setMembers_1, myInitAlert);
+		hook5Call(trampoline, C::ID_AlertDataModel_setMembers_2, C::Call_AlertDataModel_setMembers_2, myInitAlert);
 	}
 
 	static void serialize(VectorStream &stream) {
@@ -468,7 +465,7 @@ struct OnFlushHook {
 	inline static decltype(myInvokeOnFlush) *func = nullptr;
 
 	static void hook(BranchTrampoline &trampoline) {
-		func = (decltype(func))hook5Call(trampoline, 187162, 0x14302F6DF - 0x14302F44C, myInvokeOnFlush);
+		func = (decltype(func))hook5Call(trampoline, C::ID_ScaleformInvokeOnFlush, C::Call_ScaleformInvokeOnFlush, myInvokeOnFlush);
 	}
 };
 
@@ -536,8 +533,8 @@ extern "C" {
 		"Helco",
 
 		SFSEPluginVersionData::kAddressIndependence_AddressLibrary,
-		SFSEPluginVersionData::kStructureIndependence_1_8_86_Layout,
-		{ RUNTIME_VERSION_1_12_36, 0 },	// compatible with 1.7.23 and that's it
+		SFSEPluginVersionData::kStructureIndependence_1_14_70_Layout,
+		{ RUNTIME_VERSION_1_14_74, 0 },	// compatible with this version and that's it
 
 		0,	// works with any version of the script extender. you probably do not need to put anything here
 		0, 0,	// set these reserved fields to 0
