@@ -19,7 +19,10 @@
       <TextBlock FontSize="20" FontWeight="Bold" Text="Watch" HorizontalAlignment="Center"/>
       <DockPanel>
         <TextBlock Text="Model:" DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0, 0, 10, 0"/>
-        <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" ItemsSource="{Binding Source={clr:EnumBindingSource {x:Type s:WatchType}}}"/>
+        <ComboBox SelectedItem="{Binding WatchType}"
+                  HorizontalAlignment="Stretch"
+                  ItemsSource="{Binding Source={clr:EnumBindingSource {x:Type s:WatchType}}}"
+                  IsEnabled="{Binding IsNotRunning}"/>
       </DockPanel>
       <Grid ColumnDefinitions="Auto, 10, Auto, 4, 100*" RowDefinitions="Auto">
         <TextBlock Text="Status: " VerticalAlignment="Center" Grid.Column="2" FontWeight="SemiBold"/>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
 using System.Text;
@@ -14,12 +15,14 @@ internal class WatchModel : ViewModelBase
 {
     private readonly ProxyWatchService proxyWatchService;
 
-    public WatchType WatchType { get; private set; }
+    public WatchType WatchType { get; set; }
     public WatchStatus WatchStatus { get; private set; }
-    public string StartStopText => proxyWatchService?.IsRunning is true ? "Stop" : "Start";
+    public string StartStopText => IsRunning ? "Stop" : "Start";
+    public bool IsRunning => proxyWatchService?.IsRunning is true;
+    public bool IsNotRunning => !IsRunning;
     //public ReactiveCommand<Unit, Unit>? StartStop { get; }
 
-    private WatchModel() => proxyWatchService = null!;
+    [DesignOnly(true)] public WatchModel() => proxyWatchService = null!;
     public WatchModel(ProxyWatchService proxyWatchService)
     {
         this.proxyWatchService = proxyWatchService;
@@ -40,6 +43,7 @@ internal class WatchModel : ViewModelBase
             return;
         WatchStatus = status;
         this.RaisePropertyChanged(nameof(WatchStatus));
+        RaiseIsRunningChange();
     }
 
     public void StartStop()
@@ -47,7 +51,17 @@ internal class WatchModel : ViewModelBase
         if (proxyWatchService.IsRunning)
             proxyWatchService.Stop();
         else
+        {
+            proxyWatchService.SetWatchType(WatchType);
             proxyWatchService.Start();
+        }
+        RaiseIsRunningChange();
+    }
+
+    private void RaiseIsRunningChange()
+    {
         this.RaisePropertyChanged(nameof(StartStopText));
+        this.RaisePropertyChanged(nameof(IsRunning));
+        this.RaisePropertyChanged(nameof(IsNotRunning));
     }
 }

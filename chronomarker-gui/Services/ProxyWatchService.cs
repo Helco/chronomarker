@@ -8,6 +8,7 @@ internal class ProxyWatchService : IWatchService
     private readonly IServiceProvider services;
 
     private IWatchService impl = NullWatchService.Instance;
+    private WatchType? watchType = null;
 
     public WatchStatus Status => impl.Status;
     public bool IsRunning => impl.IsRunning;
@@ -29,6 +30,9 @@ internal class ProxyWatchService : IWatchService
     {
         lock (this)
         {
+            if (watchType == newType)
+                return;
+            impl.OnStatusChanged -= HandleStatusChanged;
             var prevStatus = impl.Status;
             impl.Dispose();
             switch(newType)
@@ -37,7 +41,8 @@ internal class ProxyWatchService : IWatchService
                 case WatchType.DebugTinyProtocol: impl = ActivatorUtilities.CreateInstance<DebugTinyProtocolService>(services); break;
                 default: throw new NotImplementedException($"Did not implement watch instantiation for {newType}");
             }
-            if (impl.Status != impl.Status)
+            watchType = newType;
+            if (impl.Status != prevStatus)
                 HandleStatusChanged(impl.Status);
             impl.OnStatusChanged += HandleStatusChanged;
         }

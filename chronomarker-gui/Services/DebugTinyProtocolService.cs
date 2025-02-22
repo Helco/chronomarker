@@ -21,7 +21,7 @@ internal class DebugTinyProtocolService : IWatchService, InfrequentPacketSchedul
     private WatchStatus status;
     private bool disposedValue;
 
-    public bool IsRunning { get; private set; }
+    public bool IsRunning => Status is WatchStatus.Connected;
     public WatchStatus Status
     {
         get => status;
