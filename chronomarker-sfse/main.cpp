@@ -9,6 +9,7 @@
 #include <zmq.h>
 #include <sfse/GameConsole.h>
 #include <sfse/GameTypes.h>
+#include <sfse/GameEvents.h>
 #include <sfse/ScaleformValue.h>
 #include <sfse/PluginAPI.h>
 #include <sfse_common/sfse_version.h>
@@ -86,7 +87,9 @@ void *hook5Call(BranchTrampoline &trampoline, C::ID id, C::Offset offset, void *
 	return originalTarget;
 }
 
-template<typename Me, C::ID id, C::Offset offset>
+template<typename Me,
+	C::ID ctorId, C::Offset ctorOffset,
+	C::ID dtorId, C::Offset dtorOffset = C::Call_DtorToDtor2>
 struct DataModelHooks {
 	inline static Me *_instance = nullptr;
 
@@ -96,14 +99,21 @@ struct DataModelHooks {
 		return ctor(thiz);
 	}
 
+	static Me *MyDtor(Me *thiz) {
+		_instance = nullptr;
+		return dtor(thiz);
+	}
+
 	static void hook(BranchTrampoline &trampoline,
 		const std::source_location &sourceLocation = std::source_location::current()) {
-		ctor = (decltype(ctor))hook5Call(trampoline, id, offset, MyCtor, sourceLocation);
+		ctor = (decltype(ctor))hook5Call(trampoline, ctorId, ctorOffset, MyCtor, sourceLocation);
+		dtor = (decltype(dtor))hook5Call(trampoline, dtorId, dtorOffset, MyDtor, sourceLocation);
 	}
 
 	static Me *instance() { return _instance; }
 
 	inline static decltype(MyCtor)* ctor = nullptr;
+	inline static decltype(MyDtor)* dtor = nullptr;
 };
 
 enum class EventType : byte {
@@ -115,8 +125,8 @@ enum class EventType : byte {
 	Alerts
 };
 
-struct PlayerFrequentDataModel :
-	DataModelHooks<PlayerFrequentDataModel, C::ID_PlayerDataModels_ctor, C::Call_PlayerFrequentDataModel_ctor> {
+struct PlayerFrequentDataModel : DataModelHooks<PlayerFrequentDataModel,
+	C::ID_PlayerDataModels_ctor, C::Call_PlayerFrequentDataModel_ctor, C::ID_PlayerDataModel_dtor> {
 	static constexpr auto EventName = "PlayerFrequentData"sv;
 	static constexpr auto EventType = EventType::PlayerFrequent;
 
@@ -331,8 +341,8 @@ struct EnvironmentAlertsDataModel {
 };
 static_assert(sizeof(EnvironmentAlertsDataModel) == C::Size_EnvironmentAlerts);
 
-struct HUDDataModel
-	: DataModelHooks<HUDDataModel, C::ID_HUDDataModel_ctor, C::Call_HUDDataModel_ctor> {
+struct HUDDataModel : public DataModelHooks<HUDDataModel,
+	C::ID_HUDDataModel_ctor, C::Call_HUDDataModel_ctor, C::ID_HUDDataModel_dtor> {
 	char gap0[C::Gap_HUDDataModel_ToEnv];
 	char env_gap[C::Gap_LocalEnvModel_ToStaticUIData];
 	LocalEnvironmentDataModel localEnv;
@@ -469,6 +479,21 @@ struct OnFlushHook {
 	}
 };
 
+class PostLoadEventSink : public BSTEventSink<EndLoadGameEvent>
+{
+	PostLoadEventSink() = default;
+public:
+	virtual	EventResult	ProcessEvent(const EndLoadGameEvent &arEvent, BSTEventSource<EndLoadGameEvent> *eventSource) override {
+		dirtyEvents.exchange(~0u);
+		return EventResult::kContinue;
+	}
+
+	static void install() {
+		static PostLoadEventSink sink;
+		GetEventSource<EndLoadGameEvent>()->RegisterSink(&sink);
+	}
+};
+
 void HandleSFSEMessage(SFSEMessagingInterface::Message *msg) {
 	if (msg->type != SFSEMessagingInterface::kMessage_PostLoad)
 		return;
@@ -489,13 +514,17 @@ void HandleSFSEMessage(SFSEMessagingInterface::Message *msg) {
 	HUDDataModel::hook(trampoline);
 	OnFlushHook::hook(trampoline);
 	OnInitAlert::hook(trampoline);
+	PostLoadEventSink::install();
 }
 
 class SendAllEventsTask : public SFSETaskInterface::ITaskDelegate
 {
 public:
 	virtual void Run() override {
-		if (zmqMonitorSocket == nullptr || !OnFlushHook::wasCalledAtSomePoint)
+		if (zmqMonitorSocket == nullptr ||
+			!OnFlushHook::wasCalledAtSomePoint ||
+			HUDDataModel::instance() == nullptr ||
+			PlayerFrequentDataModel::instance() == nullptr)
 			return;
 
 		const size_t MONITOR_MESSAGE_SIZE = 6;

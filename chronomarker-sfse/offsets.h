@@ -12,9 +12,12 @@ namespace C
 	using Size = uint64_t;
 
 	constexpr ID ID_PlayerDataModels_ctor = 134825;
+	constexpr ID ID_PlayerDataModel_dtor = 134886;
 	constexpr ID ID_HUDDataModel_ctor = 138166;
+	constexpr ID ID_HUDDataModel_dtor = 138504;
 	constexpr ID ID_ScaleformInvokeOnFlush = 187162; // in method FlushEventsToFlash
 
+	constexpr Offset Call_DtorToDtor2 = 0xf;
 	constexpr Offset Call_PlayerFrequentDataModel_ctor = 0x14223BDEC - 0x14223BC34;
 	constexpr Offset Call_HUDDataModel_ctor = 0x1422F9C42 - 0x1422F9C04;
 	constexpr Offset Call_ScaleformInvokeOnFlush = 0x143171A7F - 0x1431717EC;
