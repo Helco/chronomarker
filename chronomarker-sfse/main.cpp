@@ -161,6 +161,7 @@ struct LocalEnvironmentDataModel {
 	static constexpr auto EventName = "LocalEnvironmentData"sv;
 	static constexpr auto EventType = EventType::LocalEnvironment;
 	static LocalEnvironmentDataModel *instance();
+	static int SpecialTriggerCounter;
 
 	void serialize(VectorStream &stream) {
 		stream.w8((byte)EventType);
@@ -192,6 +193,7 @@ struct LocalEnvironmentDataModel {
 	UIValue<BSFixedStringCS> sLanguage;
 	char garbage2[16];
 };
+int LocalEnvironmentDataModel::SpecialTriggerCounter = 0;
 static_assert(sizeof(LocalEnvironmentDataModel) == C::Size_LocalEnvironmentData);
 
 struct LocalEnvFrequentDataModel {
@@ -426,12 +428,11 @@ struct OnInitAlert {
 };
 
 template<typename DataModel> void sendDataModel(uint32_t eventBits) {
-	if ((eventBits & (1u << (byte)DataModel::EventType)) == 0)
-		return;
 	auto instance = DataModel::instance();
+	if (instance == nullptr || (eventBits & (1u << (byte)DataModel::EventType)) == 0)
+		return;
 	VectorStream messageStream(messageBuffer);
-	if (instance != nullptr)
-		instance->serialize(messageStream);
+	instance->serialize(messageStream);
 	if (messageBuffer.size() == 0)
 		return;
 	zmq_send(zmqSocket, messageBuffer.data(), messageBuffer.size(), ZMQ_NOBLOCK);
@@ -485,6 +486,7 @@ class PostLoadEventSink : public BSTEventSink<EndLoadGameEvent>
 public:
 	virtual	EventResult	ProcessEvent(const EndLoadGameEvent &arEvent, BSTEventSource<EndLoadGameEvent> *eventSource) override {
 		dirtyEvents.exchange(~0u);
+		LocalEnvironmentDataModel::SpecialTriggerCounter = 10;
 		return EventResult::kContinue;
 	}
 
@@ -495,26 +497,27 @@ public:
 };
 
 void HandleSFSEMessage(SFSEMessagingInterface::Message *msg) {
-	if (msg->type != SFSEMessagingInterface::kMessage_PostLoad)
-		return;
+	if (msg->type == SFSEMessagingInterface::kMessage_PostLoad)
+	{
+		messageBuffer.reserve(1024);
 
-	messageBuffer.reserve(1024);
+		zmqContext = zmq_ctx_new();
+		zmqSocket = zmq_socket(zmqContext, ZMQ_PUB);
+		const int lingerValue = 0;
+		zmq_setsockopt(zmqSocket, ZMQ_LINGER, &lingerValue, sizeof(int));
+		zmq_bind(zmqSocket, "tcp://127.0.0.1:7201");
+		zmq_socket_monitor(zmqSocket, "inproc://monitor", ZMQ_EVENT_ACCEPTED);
+		zmqMonitorSocket = zmq_socket(zmqContext, ZMQ_PAIR);
+		zmq_connect(zmqMonitorSocket, "inproc://monitor");
 
-	zmqContext = zmq_ctx_new();
-	zmqSocket = zmq_socket(zmqContext, ZMQ_PUB);
-	const int lingerValue = 0;
-	zmq_setsockopt(zmqSocket, ZMQ_LINGER, &lingerValue, sizeof(int));
-	zmq_bind(zmqSocket, "tcp://127.0.0.1:7201");
-	zmq_socket_monitor(zmqSocket, "inproc://monitor", ZMQ_EVENT_ACCEPTED);
-	zmqMonitorSocket = zmq_socket(zmqContext, ZMQ_PAIR);
-	zmq_connect(zmqMonitorSocket, "inproc://monitor");
-
-	trampoline.create(256);
-	PlayerFrequentDataModel::hook(trampoline);
-	HUDDataModel::hook(trampoline);
-	OnFlushHook::hook(trampoline);
-	OnInitAlert::hook(trampoline);
-	PostLoadEventSink::install();
+		trampoline.create(256);
+		PlayerFrequentDataModel::hook(trampoline);
+		HUDDataModel::hook(trampoline);
+		OnFlushHook::hook(trampoline);
+		OnInitAlert::hook(trampoline);
+	}
+	else if (msg->type == SFSEMessagingInterface::kMessage_PostDataLoad)
+		PostLoadEventSink::install();
 }
 
 class SendAllEventsTask : public SFSETaskInterface::ITaskDelegate
@@ -537,6 +540,16 @@ public:
 			Console_Print("Chronomarker: Send all data");
 			eventBits = ~0u;
 			shouldSendAllEvents = false;
+		}
+
+		if (LocalEnvironmentDataModel::SpecialTriggerCounter > 0)
+		{
+			/* Somehow the local environment data model bypasses the event flushes after loading 
+			 * but is also not immediately available after loading. That is why this hack exists
+			 * where we just blast the local environment data for a few frames after loading.
+			 */
+			LocalEnvironmentDataModel::SpecialTriggerCounter--;
+			eventBits |= 1 << (byte)LocalEnvironmentDataModel::EventType;
 		}
 
 		sendDataModel<PlayerFrequentDataModel>(eventBits);
