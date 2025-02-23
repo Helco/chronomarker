@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,7 +24,8 @@ internal class AlertModel : ViewModelBase
 internal class StatusModel : ViewModelBase
 {
     private readonly IGameService gameService;
-    
+
+    [DesignOnly(true)] public StatusModel() { gameService = null!; }
     public StatusModel(IGameService gameService)
     {
         this.gameService = gameService;

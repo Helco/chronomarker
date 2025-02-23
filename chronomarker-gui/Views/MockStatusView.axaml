@@ -1,0 +1,144 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Chronomarker.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="600"
+             x:Class="Chronomarker.Views.MockStatusView"
+             x:DataType="vm:StatusModel">
+  <Design.DataContext>
+    <vm:StatusModel>
+      <vm:StatusModel.IsConnected>True</vm:StatusModel.IsConnected>
+      <vm:StatusModel.O2>60</vm:StatusModel.O2>
+      <vm:StatusModel.CO2>20</vm:StatusModel.CO2>
+      <vm:StatusModel.MaxO2CO2>120</vm:StatusModel.MaxO2CO2>
+      <vm:StatusModel.IsInSpaceship>False</vm:StatusModel.IsInSpaceship>
+      <vm:StatusModel.IsLanded>False</vm:StatusModel.IsLanded>
+      <vm:StatusModel.IsScanning>False</vm:StatusModel.IsScanning>
+      <vm:StatusModel.Gravity>1.3</vm:StatusModel.Gravity>
+      <vm:StatusModel.Oxygen>90</vm:StatusModel.Oxygen>
+      <vm:StatusModel.Temperature>24</vm:StatusModel.Temperature>
+      <vm:StatusModel.BodyName>Hemerlo IV</vm:StatusModel.BodyName>
+      <vm:StatusModel.LocationName>UI Framework Hell</vm:StatusModel.LocationName>
+      <vm:StatusModel.LocalTime>0.7</vm:StatusModel.LocalTime>
+      <vm:StatusModel.HasCardioEffect>False</vm:StatusModel.HasCardioEffect>
+      <vm:StatusModel.HasSkeletalEffect>False</vm:StatusModel.HasSkeletalEffect>
+      <vm:StatusModel.HasNervousEffect>False</vm:StatusModel.HasNervousEffect>
+      <vm:StatusModel.HasDigestiveEffect>False</vm:StatusModel.HasDigestiveEffect>
+      <vm:StatusModel.HasMiscEffect>False</vm:StatusModel.HasMiscEffect>
+      <vm:StatusModel.HasRadiationEffect>False</vm:StatusModel.HasRadiationEffect>
+      <vm:StatusModel.HasThermalEffect>False</vm:StatusModel.HasThermalEffect>
+      <vm:StatusModel.HasAirborneEffect>False</vm:StatusModel.HasAirborneEffect>
+      <vm:StatusModel.HasCorrosiveEffect>False</vm:StatusModel.HasCorrosiveEffect>
+      <vm:StatusModel.Alerts>
+        <vm:AlertModel>
+          <vm:AlertModel.EffectIcon>i1</vm:AlertModel.EffectIcon>
+          <vm:AlertModel.AlertText>Warning</vm:AlertModel.AlertText>
+          <vm:AlertModel.AlertSubText>This is not good</vm:AlertModel.AlertSubText>
+          <vm:AlertModel.IsPositive>False</vm:AlertModel.IsPositive>
+        </vm:AlertModel>
+        <vm:AlertModel>
+          <vm:AlertModel.EffectIcon>i2</vm:AlertModel.EffectIcon>
+          <vm:AlertModel.AlertText>Information</vm:AlertModel.AlertText>
+          <vm:AlertModel.AlertSubText>This is better</vm:AlertModel.AlertSubText>
+          <vm:AlertModel.IsPositive>True</vm:AlertModel.IsPositive>
+        </vm:AlertModel>
+        <vm:AlertModel>
+          <vm:AlertModel.EffectIcon>i2</vm:AlertModel.EffectIcon>
+          <vm:AlertModel.AlertText>Information</vm:AlertModel.AlertText>
+          <vm:AlertModel.AlertSubText>This is better</vm:AlertModel.AlertSubText>
+          <vm:AlertModel.IsPositive>True</vm:AlertModel.IsPositive>
+        </vm:AlertModel>
+      </vm:StatusModel.Alerts>
+    </vm:StatusModel>
+  </Design.DataContext>
+
+  <Border BorderBrush="Black" BorderThickness="1" CornerRadius="3">
+  <StackPanel
+		Spacing="5"
+		Margin="10, 10, 10, 10">
+    <TextBlock FontSize="20" FontWeight="Bold" Text="Mocked Game" HorizontalAlignment="Center"/>
+    <DockPanel>
+      <TextBlock Text="Connection:" HorizontalAlignment="Left" FontWeight="Bold" DockPanel.Dock="Left" Margin="0, 0, 10, 0"/>
+      <TextBlock Text="{Binding ConnectionText}" Foreground="{Binding ConnectionColor}" HorizontalAlignment="Left" FontWeight="Bold"/>
+    </DockPanel>
+    <TextBlock Text="Player:" HorizontalAlignment="Left" FontWeight="Bold"/>
+    <Grid ColumnDefinitions="Auto,1*,50" RowDefinitions="40, 40">
+      <TextBlock Text="O2:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="0" Grid.Column="0" />
+      <Slider Value="{Binding O2, Mode=OneWay}" ValueChanged="O2_ValueChanged" Maximum="{Binding MaxO2CO2}" Grid.Row="0" Grid.Column="1" />
+      <TextBox Text="{Binding O2, Mode=OneWay, StringFormat=F0}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2"/>
+      <TextBlock Text="CO2:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="1" Grid.Column="0"/>
+      <Slider Value="{Binding InvCO2, Mode=OneWay}" ValueChanged="InvCO2_ValueChanged" Maximum="{Binding MaxO2CO2}" Foreground="Gray" Background="Red" Grid.Row="1" Grid.Column="1"/>
+      <TextBox Text="{Binding CO2, Mode=OneWay, StringFormat=F0}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="1" Grid.Column="2"/>
+    </Grid>
+
+    <DockPanel>
+      <TextBlock Text="Position:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <ToggleButton IsChecked="{Binding IsInSpaceship, Mode=OneWay}" Content="In spaceship" IsCheckedChanged="InSpaceshipChanged"/>
+        <ToggleButton IsChecked="{Binding IsLanded, Mode=OneWay}" Content="Is landed" IsCheckedChanged="IsLandedChanged"/>
+        <ToggleButton IsChecked="{Binding IsScanning, Mode=OneWay}" Content="Is scanning" IsCheckedChanged="IsScanningChanged"/>
+      </StackPanel>
+    </DockPanel>
+    <DockPanel>
+      <TextBlock Text="Effects:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <ToggleButton IsChecked="{Binding HasCardioEffect, Mode=OneWay}" Content="Cardio" IsCheckedChanged="PersonalEffectChanged" Tag="PersonalEffect_CardioRespiratoryCirculatory"/>
+        <ToggleButton IsChecked="{Binding HasSkeletalEffect, Mode=OneWay}" Content="Skeletal" IsCheckedChanged="PersonalEffectChanged" Tag="PersonalEffect_SkeletalMuscular"/>
+        <ToggleButton IsChecked="{Binding HasNervousEffect, Mode=OneWay}" Content="Nervous" IsCheckedChanged="PersonalEffectChanged" Tag="PersonalEffect_NervousSystem"/>
+        <ToggleButton IsChecked="{Binding HasDigestiveEffect, Mode=OneWay}" Content="Digestive" IsCheckedChanged="PersonalEffectChanged" Tag="PersonalEffect_DigestiveImmune"/>
+        <ToggleButton IsChecked="{Binding HasMiscEffect, Mode=OneWay}" Content="Misc" IsCheckedChanged="PersonalEffectChanged" Tag="PersonalEffect_Misc"/>
+      </StackPanel>
+    </DockPanel>
+
+    <Separator/>
+    <TextBlock Text="Environment:" HorizontalAlignment="Left" FontWeight="Bold"/>
+    <Grid ColumnDefinitions="Auto, *, *">
+      <TextBlock Text="Body / Location:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left" Grid.Column="0"/>
+      <TextBox Text="{Binding BodyName, Mode=OneWay}" Margin="0, 0, 10, 0" Grid.Column="1" MaxLength="16" LostFocus="BodyNameUnfocused"/>
+      <TextBox Text="{Binding LocationName, Mode=OneWay}" Grid.Column="2" MaxLength="32" LostFocus="LocationNameUnfocused" />
+    </Grid>
+    <DockPanel>
+      <TextBlock Text="Effects:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+        <ToggleButton IsChecked="{Binding HasRadiationEffect, Mode=OneWay}" Content="Radiation" IsCheckedChanged="EnvEffectChanged" Tag="HazardEffect_Radiation"/>
+        <ToggleButton IsChecked="{Binding HasThermalEffect, Mode=OneWay}" Content="Thermal" IsCheckedChanged="EnvEffectChanged" Tag="HazardEffect_Thermal"/>
+        <ToggleButton IsChecked="{Binding HasAirborneEffect, Mode=OneWay}" Content="Airborne" IsCheckedChanged="EnvEffectChanged" Tag="HazardEffect_Airborne"/>
+        <ToggleButton IsChecked="{Binding HasCorrosiveEffect, Mode=OneWay}" Content="Corrosive" IsCheckedChanged="EnvEffectChanged" Tag="HazardEffect_Corrosive"/>
+      </StackPanel>
+    </DockPanel>
+    <Grid ColumnDefinitions="Auto,1*,50" RowDefinitions="40, 40, 40, 40">
+      <TextBlock Text="Local time:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="0" Grid.Column="0" />
+      <Slider Value="{Binding LocalTime, Mode=OneWay}" ValueChanged="LocalTimeChanged" Maximum="1" Grid.Row="0" Grid.Column="1" />
+      <TextBox Text="{Binding LocalTime, Mode=OneWay, StringFormat=F2}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2"/>
+      <TextBlock Text="Gravity:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="1" Grid.Column="0" />
+      <Slider Value="{Binding Gravity, Mode=OneWay}" ValueChanged="O2_ValueChanged" Maximum="5" Grid.Row="1" Grid.Column="1" />
+      <TextBox Text="{Binding Gravity, Mode=OneWay, StringFormat=F1}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="1" Grid.Column="2"/>
+      <TextBlock Text="Oxygen:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="2" Grid.Column="0"/>
+      <Slider Value="{Binding Oxygen, Mode=OneWay}" ValueChanged="InvCO2_ValueChanged" Maximum="100" Grid.Row="2" Grid.Column="1"/>
+      <TextBox Text="{Binding Oxygen, Mode=OneWay, StringFormat=F0}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="2" Grid.Column="2"/>
+      <TextBlock Text="Temperature:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="3" Grid.Column="0"/>
+      <Slider Value="{Binding Temperature, Mode=OneWay}" ValueChanged="InvCO2_ValueChanged" Minimum="-294" Maximum="500" Grid.Row="3" Grid.Column="1"/>
+      <TextBox Text="{Binding Temperature, Mode=OneWay, StringFormat=F0}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="3" Grid.Column="2"/>
+    </Grid>
+
+    <Separator/>
+    <TextBlock Text="Alerts:" HorizontalAlignment="Left" FontWeight="Bold"/>
+    <ScrollViewer Height="120">
+    <ItemsControl  ItemsSource="{Binding Alerts}"  >
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Border BorderBrush="{Binding Border}" BorderThickness="2" Padding="5" CornerRadius="5" Margin="0, 0, 0, 10">
+            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto">
+              <TextBlock Text="{Binding EffectIcon}" FontWeight="Bold" Grid.RowSpan="2" VerticalAlignment="Center" Margin="5,0,20,0"/>
+              <TextBlock Text="{Binding AlertText}" FontWeight="SemiBold" Grid.Column="1"/>
+              <TextBlock Text="{Binding AlertSubText}" Grid.Column="1" Grid.Row="1"/>
+            </Grid>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    </ScrollViewer>
+  </StackPanel>
+  </Border>
+</UserControl>

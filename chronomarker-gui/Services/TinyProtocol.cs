@@ -351,6 +351,9 @@ internal class TinyProtocol
 
     private void QueueString(ProviderMessage type, string newValue, ref string oldValue, int lengthBits, bool doCheck)
     {
+        var maxLength = (1 << lengthBits) - 1;
+        if (newValue.Length > maxLength)
+            newValue = newValue[..maxLength];
         if (doCheck && newValue == oldValue)
             return;
         oldValue = newValue;

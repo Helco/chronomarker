@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Chronomarker.ViewModels"
+             xmlns:v="clr-namespace:Chronomarker.Views"
+             mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="640"
+             x:Class="Chronomarker.Views.MockGameView"
+             x:DataType="vm:MainViewModel">
+  <Design.DataContext>
+    <!-- This only sets the DataContext for the previewer in an IDE,
+         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+    <vm:MainViewModel />
+  </Design.DataContext>
+
+    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto, 100">
+      <v:WatchView DataContext="{Binding Watch}"/>      
+      <v:LogView Grid.Row="1" DataContext="{Binding Log}"/>
+      <v:MockStatusView DataContext="{Binding Status}" Margin="10, 0, 0, 0"
+                    Grid.Column="1" Grid.RowSpan="3"/>
+    </Grid>
+</UserControl>

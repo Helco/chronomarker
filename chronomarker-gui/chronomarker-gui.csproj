@@ -28,4 +28,27 @@
   <ItemGroup>
     <UpToDateCheckInput Remove="Views\LogView.axaml" />
   </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaXaml Update="Views\MockGameWindow.axaml">
+      <SubType>Designer</SubType>
+    </AvaloniaXaml>
+    <AvaloniaXaml Update="Views\MockStatusView.axaml">
+      <SubType>Designer</SubType>
+    </AvaloniaXaml>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\MockGameView.axaml.cs">
+      <DependentUpon>MockGameView.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Views\MockGameWindow.axaml.cs">
+      <SubType>Code</SubType>
+      <DependentUpon>MockGameWindow.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Views\MockStatusView.axaml.cs">
+      <SubType>Code</SubType>
+      <DependentUpon>MockStatusView.axaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

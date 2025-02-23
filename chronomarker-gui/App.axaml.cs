@@ -12,6 +12,8 @@ namespace Chronomarker;
 
 public partial class App : Application
 {
+    public const bool MockGame = true;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -27,24 +29,24 @@ public partial class App : Application
 
         collection.AddSingleton<LogService>();
         collection.AddSingleton<ProxyWatchService>();
-        collection.AddSingleton<IGameService, GameService>();
+
+        if (MockGame)
+            collection.AddSingleton<IGameService, MockGameService>();
+        else
+            collection.AddSingleton<IGameService, GameService>();
 
         var services = collection.BuildServiceProvider();
         Resources.Add(typeof(IServiceProvider), services);
         var mv = services.GetRequiredService<MainViewModel>();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = mv
-            };
+            desktop.MainWindow = MockGame
+                ? new MockGameWindow { DataContext = mv }
+                : new MainWindow { DataContext = mv };
         }
-        else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
+        else if (!Design.IsDesignMode)
         {
-            singleViewPlatform.MainView = new MainView
-            {
-                DataContext = mv
-            };
+            throw new PlatformNotSupportedException();
         }
 
         base.OnFrameworkInitializationCompleted();
