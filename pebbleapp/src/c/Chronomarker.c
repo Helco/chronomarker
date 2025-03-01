@@ -51,6 +51,7 @@ static BitmapLayer* s_planetLayer;
 static GBitmap* s_planetBitmap;
 static O2CO2Layer s_o2co2;
 static EffectIconLayer s_effectIcons[5 + 4];
+//static CurvedTextLayer s_bodyName;
 
 static void prv_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
@@ -69,6 +70,8 @@ static void prv_window_load(Window *window) {
 
   o2co2_create(&s_o2co2, window_layer);
   o2co2_set_values(&s_o2co2, 22, 42);
+  //curved_text_create(&s_bodyName, window_layer);
+  //curved_text_set_text(&s_bodyName, "TRITON");
 
   for (int i = 0; i < 5 + 4; i++)
   {
@@ -82,6 +85,7 @@ static void prv_window_unload(Window *window) {
   bitmap_layer_destroy(s_planetLayer);
   gbitmap_destroy(s_planetBitmap);
   o2co2_destroy(&s_o2co2);
+  //curved_text_destroy(&s_bodyName);
   for (int i = 0; i < 5 + 4; i++)
     effect_icon_destroy(s_effectIcons + i);
 }

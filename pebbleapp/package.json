@@ -39,6 +39,13 @@
           "name": "ICON_TRI",
           "file": "images/iconTri.png",
           "memoryFormat": "1BitPalette"
+        },
+        {
+          "type": "bitmap",
+          "name": "FONT_8",
+          "file": "images/font-8.png",
+          "memoryFormat": "8Bit",
+          "storageFormat": "pbi"
         }
       ]
     }

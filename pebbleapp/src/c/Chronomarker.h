@@ -1,10 +1,10 @@
 #pragma once
 #include <pebble.h>
 
-#if defined DEBUG || defined _DEBUG
+#if 1
 #define ASSERT(x) while (!(x)) { \
     APP_LOG(APP_LOG_LEVEL_ERROR, "Assertion failed: %s", #x); \
-    *((void*)NULL) = 0; }
+    *((uint8_t*)NULL) = 0; }
 #else
 #define ASSERT(x)
 #endif
@@ -50,3 +50,19 @@ typedef struct EffectIconLayer
 void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int positionSlot);
 void effect_icon_destroy(EffectIconLayer* layer);
 void effect_icon_set_icon(EffectIconLayer* layer, EffectIcon icon);
+
+#define BITS_BODY (4)
+#define MAX_BODY_LENGTH (1 << BITS_BODY)
+
+typedef struct CurvedTextLayer
+{
+    Layer* layer;
+    GBitmap* charBitmaps[MAX_BODY_LENGTH + 1];
+    GRect charBounds[MAX_BODY_LENGTH];
+    uint8_t charCount;
+    bool rerender;
+    char text[MAX_BODY_LENGTH];
+} CurvedTextLayer;
+void curved_text_create(CurvedTextLayer* layer, Layer* parentLayer);
+void curved_text_destroy(CurvedTextLayer* layer);
+void curved_text_set_text(CurvedTextLayer* layer, const char* text);
