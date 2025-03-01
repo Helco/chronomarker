@@ -50,6 +50,7 @@ static void prv_click_config_provider(void *context) {
 static BitmapLayer* s_planetLayer;
 static GBitmap* s_planetBitmap;
 static O2CO2Layer s_o2co2;
+static EffectIconLayer s_effectIcons[5 + 4];
 
 static void prv_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
@@ -67,7 +68,13 @@ static void prv_window_load(Window *window) {
   layer_add_child(window_layer, bitmap_layer_get_layer(s_planetLayer));
 
   o2co2_create(&s_o2co2, window_layer);
-  o2co2_set_values(&s_o2co2, 23, 43);
+  o2co2_set_values(&s_o2co2, 22, 42);
+
+  for (int i = 0; i < 5 + 4; i++)
+  {
+    effect_icon_create(s_effectIcons + i, window_layer, i);
+    effect_icon_set_icon(s_effectIcons + i, EFFECT_ICON_CARDIO + i);
+  }
 }
 
 static void prv_window_unload(Window *window) {
@@ -75,6 +82,8 @@ static void prv_window_unload(Window *window) {
   bitmap_layer_destroy(s_planetLayer);
   gbitmap_destroy(s_planetBitmap);
   o2co2_destroy(&s_o2co2);
+  for (int i = 0; i < 5 + 4; i++)
+    effect_icon_destroy(s_effectIcons + i);
 }
 
 static void in_dropped_handler(AppMessageResult reason, void* context)

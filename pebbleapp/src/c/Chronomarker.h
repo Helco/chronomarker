@@ -20,8 +20,33 @@ typedef struct O2CO2Layer
     GPath o2Path;
     GPath co2Path;
     GPoint points[COUNT_O2CO2 * 2]; // shared between o2/co2
+    BitmapLayer *o2Text, *co2Text;
 } O2CO2Layer;
-
 void o2co2_create(O2CO2Layer* layer, Layer* parentLayer);
 void o2co2_destroy(O2CO2Layer* layer);
 void o2co2_set_values(O2CO2Layer* layer, uint8_t o2, uint8_t co2);
+
+typedef enum EffectIcon
+{
+    EFFECT_ICON_NONE = 0,
+    EFFECT_ICON_CARDIO,
+    EFFECT_ICON_SKELETAL,
+    EFFECT_ICON_NERVOUS,
+    EFFECT_ICON_DIGESTIVE,
+    EFFECT_ICON_MISC,
+    EFFECT_ICON_RADIATION,
+    EFFECT_ICON_THERMAL,
+    EFFECT_ICON_AIRBORNE,
+    EFFECT_ICON_CORROSIVE,
+    EFFECT_ICON_HEALING,
+
+    EFFECT_ICON_COUNT = EFFECT_ICON_HEALING - 1,
+    EFFECT_ICON_FIRST_ENVIRONMENTAL = EFFECT_ICON_RADIATION
+} EffectIcon;
+typedef struct EffectIconLayer
+{
+    Layer* layer;
+} EffectIconLayer;
+void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int positionSlot);
+void effect_icon_destroy(EffectIconLayer* layer);
+void effect_icon_set_icon(EffectIconLayer* layer, EffectIcon icon);
