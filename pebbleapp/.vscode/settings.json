@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "*.ksy": "yaml",
-        "pebble.h": "c"
+        "pebble.h": "c",
+        "resource_ids.auto.h": "c"
     }
 }

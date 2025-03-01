@@ -1,4 +1,4 @@
-#include <pebble.h>
+#include "Chronomarker.h"
 
 static Window *s_window;
 static TextLayer *s_text_layer;
@@ -47,18 +47,34 @@ static void prv_click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_DOWN, prv_down_click_handler);
 }
 
+static BitmapLayer* s_planetLayer;
+static GBitmap* s_planetBitmap;
+static O2CO2Layer s_o2co2;
+
 static void prv_window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
+  window_set_background_color(s_window, GColorBlack);
 
   s_text_layer = text_layer_create(GRect(0, 72, bounds.size.w, 20));
   text_layer_set_text(s_text_layer, "Press a button");
   text_layer_set_text_alignment(s_text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(s_text_layer));
+
+  s_planetBitmap = gbitmap_create_with_resource(RESOURCE_ID_PLANET);
+  s_planetLayer = bitmap_layer_create(GRect(180/2 - 50, 180/2 - 50, 100, 100));
+  bitmap_layer_set_bitmap(s_planetLayer, s_planetBitmap);
+  bitmap_layer_set_compositing_mode(s_planetLayer, GCompOpSet);
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_planetLayer));
+
+  o2co2_create(&s_o2co2, window_layer);
+  o2co2_set_values(&s_o2co2, 23, 43);
 }
 
 static void prv_window_unload(Window *window) {
   text_layer_destroy(s_text_layer);
+  bitmap_layer_destroy(s_planetLayer);
+  gbitmap_destroy(s_planetBitmap);
+  o2co2_destroy(&s_o2co2);
 }
 
 static void in_dropped_handler(AppMessageResult reason, void* context)

@@ -17,7 +17,13 @@
       "watchface": false
     },
     "resources": {
-      "media": []
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "PLANET",
+          "file": "images/planet.png"
+        }
+      ]
     }
   }
 }

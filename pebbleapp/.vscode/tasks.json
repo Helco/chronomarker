@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build and install",
+			"type": "shell",
+			"command": "pebble build --debug && pebble install --emulator chalk",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}

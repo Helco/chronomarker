@@ -4,6 +4,7 @@
             "name": "Pebble Chalk",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/build/chalk/",
                 "/home/pebble/.pebble-sdk/SDKs/current/sdk-core/pebble/chalk/include/"
             ],
             "defines": [],
