@@ -112,13 +112,13 @@
       <Slider Value="{Binding LocalTime, Mode=OneWay}" ValueChanged="LocalTimeChanged" Maximum="1" Grid.Row="0" Grid.Column="1" />
       <TextBox Text="{Binding LocalTime, Mode=OneWay, StringFormat=F2}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="0" Grid.Column="2"/>
       <TextBlock Text="Gravity:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="1" Grid.Column="0" />
-      <Slider Value="{Binding Gravity, Mode=OneWay}" ValueChanged="O2_ValueChanged" Maximum="5" Grid.Row="1" Grid.Column="1" />
+      <Slider Value="{Binding Gravity, Mode=OneWay}" ValueChanged="GravityChanged" Maximum="5" Grid.Row="1" Grid.Column="1" />
       <TextBox Text="{Binding Gravity, Mode=OneWay, StringFormat=F1}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="1" Grid.Column="2"/>
       <TextBlock Text="Oxygen:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="2" Grid.Column="0"/>
-      <Slider Value="{Binding Oxygen, Mode=OneWay}" ValueChanged="InvCO2_ValueChanged" Maximum="100" Grid.Row="2" Grid.Column="1"/>
+      <Slider Value="{Binding Oxygen, Mode=OneWay}" ValueChanged="OxygenChanged" Maximum="100" Grid.Row="2" Grid.Column="1"/>
       <TextBox Text="{Binding Oxygen, Mode=OneWay, StringFormat=F0}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="2" Grid.Column="2"/>
       <TextBlock Text="Temperature:" VerticalAlignment="Center" Margin="0, 0, 10, 0" Grid.Row="3" Grid.Column="0"/>
-      <Slider Value="{Binding Temperature, Mode=OneWay}" ValueChanged="InvCO2_ValueChanged" Minimum="-294" Maximum="500" Grid.Row="3" Grid.Column="1"/>
+      <Slider Value="{Binding Temperature, Mode=OneWay}" ValueChanged="TemperatureChanged" Minimum="-294" Maximum="500" Grid.Row="3" Grid.Column="1"/>
       <TextBox Text="{Binding Temperature, Mode=OneWay, StringFormat=F0}" MinWidth="50" Focusable="False" IsEnabled="false" VerticalAlignment="Center" Margin="10,0,0,0" Grid.Row="3" Grid.Column="2"/>
     </Grid>
 

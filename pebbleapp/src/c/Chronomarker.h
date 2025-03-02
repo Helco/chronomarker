@@ -85,16 +85,16 @@ void curved_text_destroy(CurvedTextLayer* layer);
 void curved_text_set_text(CurvedTextLayer* layer, const char* text);
 
 #define SUN_POINTS 16
-typedef struct SunLayer
+typedef struct PlanetLayer
 {
     Layer* layer;
     GPath path;
     int lastTime;
-    GPoint points[SUN_POINTS];
-} SunLayer;
-void sun_create(SunLayer* layer, Layer* parentLayer);
-void sun_destroy(SunLayer* layer);
-void sun_set_time(SunLayer* layer, int time);
+    GPoint points[SUN_POINTS * 2];
+} PlanetLayer;
+void planet_create(PlanetLayer* layer, Layer* parentLayer);
+void planet_destroy(PlanetLayer* layer);
+void planet_set_time(PlanetLayer* layer, int time);
 
 typedef enum StateChanges
 {

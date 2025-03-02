@@ -152,7 +152,7 @@ internal class PebbleService : IWatchService
     {
         try
         {
-            var transport = new NetPebble.Transports.WebsocketTransport("ws://127.0.0.1:60981");
+            var transport = new NetPebble.Transports.WebsocketTransport("ws://127.0.0.1:38747");
             await transport.ConnectAsync(default);
 
             // Connection

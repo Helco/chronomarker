@@ -3,8 +3,7 @@
 typedef struct App
 {
     Window* window;
-    GBitmap* planetBitmap;
-    BitmapLayer* planetLayer;
+    PlanetLayer planet;
     O2CO2Layer o2co2;
     EffectIconLayer effectIcons[5 + 4];
 } App;
@@ -20,6 +19,8 @@ void app_handle_gamestate(StateChanges changes)
 {
   if (changes & STATE_O2CO2)
     o2co2_set_values(&app.o2co2, game.o2, game.co2);
+  if (changes & STATE_TIME)
+    planet_set_time(&app.planet, game.time);
   if (changes & STATE_PERSONALEFFECTS)
   {
     for (int i = 0; i < MAX_PERSONALEFFECTS; i++)
@@ -37,12 +38,8 @@ static void prv_window_load(Window *window) {
   GRect bounds = layer_get_bounds(window_layer);
   window_set_background_color(window, GColorBlack);
 
-  app.planetBitmap = gbitmap_create_with_resource(RESOURCE_ID_PLANET);
-  app.planetLayer = bitmap_layer_create(GRect(180/2 - 50, 180/2 - 50, 100, 100));
-  bitmap_layer_set_bitmap(app.planetLayer, app.planetBitmap);
-  bitmap_layer_set_compositing_mode(app.planetLayer, GCompOpSet);
-  layer_add_child(window_layer, bitmap_layer_get_layer(app.planetLayer));
-
+  planet_create(&app.planet, window_layer);
+  planet_set_time(&app.planet, 20);
   o2co2_create(&app.o2co2, window_layer);
   o2co2_set_values(&app.o2co2, 22, 42);
   //curved_text_create(&s_bodyName, window_layer);
@@ -55,8 +52,7 @@ static void prv_window_load(Window *window) {
 }
 
 static void prv_window_unload(Window *window) {
-  bitmap_layer_destroy(app.planetLayer);
-  gbitmap_destroy(app.planetBitmap);
+  planet_destroy(&app.planet);
   o2co2_destroy(&app.o2co2);
   //curved_text_destroy(&s_bodyName);
   for (int i = 0; i < 5 + 4; i++)

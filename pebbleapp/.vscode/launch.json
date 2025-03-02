@@ -1,0 +1,50 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Aplite (Classic, Steel)",
+            "type": "pebble",
+            "request": "launch",
+            "platform": "aplite",
+            "elfPath": "^\"\\${workspaceFolder}/build/aplite/pebble-app.elf\"",
+            "workDir": "^\"\\${workspaceFolder}/\""
+        },
+        {
+            "name": "Debug Basalt (Time, Time Steel)",
+            "type": "pebble",
+            "request": "launch",
+            "platform": "basalt",
+            "elfPath": "^\"\\${workspaceFolder}/build/basalt/pebble-app.elf\"",
+            "workDir": "^\"\\${workspaceFolder}/\""
+        },
+        {
+            "name": "Debug Chalk (Time Round)",
+            "type": "pebble",
+            "request": "attach",
+            "platform": "chalk",
+            "elfPath": "^\"\\${workspaceFolder}/build/chalk/pebble-app.elf\"",
+            "workDir": "^\"\\${workspaceFolder}/\"",
+            "pebbleDevPath": "/opt/pebble-sdk-4.5-linux64/",
+            "armCSToolsPath": "/opt/pebble-sdk-4.5-linux64/arm-cs-tools/bin/"
+        },
+        {
+            "name": "Debug Diorite (Pebble 2)",
+            "type": "pebble",
+            "request": "launch",
+            "platform": "diorite",
+            "elfPath": "^\"\\${workspaceFolder}/build/diorite/pebble-app.elf\"",
+            "workDir": "^\"\\${workspaceFolder}/\""
+        },
+        {
+            "name": "Debug Emery (Time 2)",
+            "type": "pebble",
+            "request": "launch",
+            "platform": "emery",
+            "elfPath": "^\"\\${workspaceFolder}/build/emery/pebble-app.elf\"",
+            "workDir": "^\"\\${workspaceFolder}/\""
+        }
+    ]
+}

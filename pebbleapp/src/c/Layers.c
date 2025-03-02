@@ -3,6 +3,7 @@
 static void prv_o2co2_draw(struct Layer *layer, GContext* ctx);
 static void prv_effect_icon_draw(struct Layer *layer, GContext* ctx);
 static void prv_curved_text_draw(struct Layer *layer, GContext* ctx);
+static void prv_planet_draw(struct Layer* layer, GContext* ctx);
 
 static GPoint s_innerPoints[COUNT_O2CO2]; // anti-clockwise
 static GPoint s_outerPoints[COUNT_O2CO2]; // clock-wise
@@ -283,6 +284,10 @@ void curved_text_set_text(CurvedTextLayer* layer, const char* text)
     layer->rerender = true;
 }
 
+
+// integer_sqrt, polar_div and my_graphics_draw_rotated_bitmap are adapted versions of 
+// the released, original pebble firmware, licensed under Apache-2.0
+
 //! newton's method for floor(sqrt(x)) -> should always converge
 int32_t integer_sqrt(int64_t x) {
   if (x < 0) {
@@ -420,4 +425,92 @@ void prv_curved_text_draw(Layer* layerPbl, GContext* ctx)
         if (layer->charBounds[i].size.w > 0)
             graphics_draw_bitmap_in_rect(ctx, layer->charBitmaps[i], layer->charBounds[i]);
     }
+}
+
+static GBitmap* s_planetBitmap;
+
+void planet_create(PlanetLayer* layer, Layer* parentLayer)
+{
+    if (s_planetBitmap == NULL)
+    {
+        s_planetBitmap = gbitmap_create_with_resource(RESOURCE_ID_PLANET);
+    }
+
+    layer->layer = layer_create_with_data(GRectCenteredCircle(50), sizeof(PlanetLayer*));
+    *(PlanetLayer**)layer_get_data(layer->layer) = layer;
+    layer_set_update_proc(layer->layer, prv_planet_draw);
+    layer_add_child(parentLayer, layer->layer);
+    layer->lastTime = -1;
+    layer->path.points = layer->points;
+    layer->path.num_points = SUN_POINTS * 2;
+    layer->path.offset = GPoint(50, 50);
+    layer->path.rotation = 0;
+}
+
+void planet_destroy(PlanetLayer* layer)
+{
+    layer_destroy(layer->layer);
+}
+
+void planet_set_time(PlanetLayer* layer, int time)
+{
+    ASSERT(time >= 0 && time < (1 << BITS_TIME));
+    if (layer->lastTime == time) return;
+
+    // The sun highlight has two strips of vertices, one going on the planet edge and one going across
+    // the one going across is an oval stretched horizontally based on the time phase
+    // Finally all is tilted.
+    // This is based on JS code found on the LPV6, but translated into fixed point
+
+    const int32_t MaxTime = 1 << BITS_TIME;
+    const int32_t HalfTime = 1 << (BITS_TIME - 1);
+    const int32_t AnglePerPoint = TRIG_MAX_ANGLE / 2 / SUN_POINTS;
+    const int32_t OuterRadius = 50;
+    const int32_t innerRadius = time < HalfTime
+        ? -OuterRadius + OuterRadius * 4 * time / MaxTime
+        : OuterRadius - OuterRadius * 4 * (time - HalfTime) / MaxTime;
+    const int32_t tilt = time < HalfTime
+        ? DEG_TO_TRIGANGLE(57)
+        : DEG_TO_TRIGANGLE(180 + 57);
+    const int32_t // TODO: clean up switcharoo
+        cosTilt = sin_lookup(tilt) >> 1, // I sacrify one bit of precision to avoid 64bit arithmetic later
+        sinTilt = cos_lookup(tilt) >> 1; 
+    int i = 0;
+    GPoint* point = layer->points;
+
+    // stretched oval
+    for (i = 0; i < TRIG_MAX_ANGLE / 2; i += AnglePerPoint, point++)
+    {
+        const int32_t sinEdge = sin_lookup(i), cosEdge = cos_lookup(i);
+        const int32_t sinSin = (sinEdge * sinTilt) >> 15, sinCos = (sinEdge * cosTilt) >> 15,
+                      cosSin = (cosEdge * sinTilt) >> 15, cosCos = (cosEdge * cosTilt) >> 15;
+        point->x = (-OuterRadius * cosSin + innerRadius * sinCos) >> 16,
+        point->y = (OuterRadius * cosCos + innerRadius * sinSin) >> 16;
+    }
+
+    // planet edge (only if we have gone over the zenith)
+    if (layer->lastTime < 0 || (layer->lastTime < HalfTime) != (time < HalfTime))
+    {
+        for (; i < TRIG_MAX_ANGLE; i += AnglePerPoint, point++)
+        {
+            const int32_t sinEdge = sin_lookup(i), cosEdge = cos_lookup(i);
+            const int32_t sinSin = (sinEdge * sinTilt) >> 15, sinCos = (sinEdge * cosTilt) >> 15,
+                          cosSin = (cosEdge * sinTilt) >> 15, cosCos = (cosEdge * cosTilt) >> 15;
+            point->x = (OuterRadius * (-cosSin + sinCos)) >> 16;
+            point->y = (OuterRadius * (cosCos + sinSin)) >> 16;
+        }
+    }
+
+    layer->lastTime = time;
+    layer_mark_dirty(layer->layer);
+}
+
+void prv_planet_draw(Layer* layerPbl, GContext* ctx)
+{
+    PlanetLayer* layer = *(PlanetLayer**)layer_get_data(layerPbl);
+    graphics_context_set_antialiased(ctx, false);
+    graphics_context_set_fill_color(ctx, GColorLightGray);
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    gpath_draw_filled(ctx, &layer->path);
+    graphics_draw_bitmap_in_rect(ctx, s_planetBitmap, GRect(0, 0, 100, 100));
 }

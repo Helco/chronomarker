@@ -129,6 +129,7 @@ StateChanges handle_packet(const uint8_t* data, const int size)
         break;
       case PACKET_TIME:
         game.time = bitstream_read(&stream, 6);
+        changes |= STATE_TIME;
         break;
       case PACKET_LOCATIONNAME:
         bitstream_readString(&stream, BITS_LOCNAME, game.locationName);
