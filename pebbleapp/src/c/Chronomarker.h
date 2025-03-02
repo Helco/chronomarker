@@ -35,12 +35,13 @@ typedef struct O2CO2Layer
 {
     Layer* layer;
     uint8_t o2, co2;
+    bool big;
     GPath o2Path;
     GPath co2Path;
     GPoint points[COUNT_O2CO2 * 2]; // shared between o2/co2
     BitmapLayer *o2Text, *co2Text;
 } O2CO2Layer;
-void o2co2_create(O2CO2Layer* layer, Layer* parentLayer);
+void o2co2_create(O2CO2Layer* layer, bool big, Layer* parentLayer);
 void o2co2_destroy(O2CO2Layer* layer);
 void o2co2_set_values(O2CO2Layer* layer, uint8_t o2, uint8_t co2);
 
@@ -208,6 +209,7 @@ typedef struct ScanWindow
     TextLayer* legend;
     ScanDecorationLayer decoration;
     PlanetLayer planet;
+    O2CO2Layer o2co2;
     char temperatureBuffer[SCAN_BUFFER_SIZE];
     char oxygenBuffer[SCAN_BUFFER_SIZE];
     char gravityBuffer[SCAN_BUFFER_SIZE];

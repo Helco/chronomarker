@@ -9,36 +9,43 @@ static void prv_scan_decoration_center_draw(struct Layer* layer, GContext* ctx);
 
 static GPoint s_innerPoints[COUNT_O2CO2]; // anti-clockwise
 static GPoint s_outerPoints[COUNT_O2CO2]; // clock-wise
-#define O2CO2_INNER_RADIUS 67
-#define O2CO2_OUTER_RADIUS 84
-#define O2CO2_BOUNDS GRect(7, 91, 166, 82)
+static GPoint s_innerPointsSmall[COUNT_O2CO2]; // anti-clockwise
+static GPoint s_outerPointsSmall[COUNT_O2CO2]; // clock-wise
+#define O2CO2_BOUNDS GRect(0, 91, 180, 82)
 #define GRectCenteredCircle(r) GRect(90 - r, 90 - r, r * 2, r * 2)
 
-void o2co2_create(O2CO2Layer* layer, Layer* parentLayer)
+static void prv_o2co2_calc_points(GPoint* innerPoints, GPoint* outerPoints, int innerRadius, int outerRadius)
+{
+    GRect inner = GRectCenteredCircle(innerRadius);
+    GRect outer = GRectCenteredCircle(outerRadius);
+    for (int i = 0; i < COUNT_O2CO2; i++)
+    {
+        innerPoints[i] = gpoint_from_polar(inner, GOvalScaleModeFillCircle,
+            TRIG_MAX_ANGLE * 3 / 4 - TRIG_MAX_ANGLE * i / 2 / MAX_O2CO2);
+        outerPoints[i] = gpoint_from_polar(outer, GOvalScaleModeFillCircle,
+            TRIG_MAX_ANGLE * 1 / 4 + TRIG_MAX_ANGLE * i / 2 / MAX_O2CO2);
+
+        innerPoints[i].x -= O2CO2_BOUNDS.origin.x;
+        innerPoints[i].y -= O2CO2_BOUNDS.origin.y;
+        outerPoints[i].x -= O2CO2_BOUNDS.origin.x;
+        outerPoints[i].y -= O2CO2_BOUNDS.origin.y;
+    }
+}
+
+void o2co2_create(O2CO2Layer* layer, bool big, Layer* parentLayer)
 {
     static bool calculatedPoints = false;
     static GBitmap *co2Bitmap = NULL, *o2Bitmap = NULL;
     if (!calculatedPoints)
     {
         calculatedPoints = true;
-        GRect inner = GRectCenteredCircle(O2CO2_INNER_RADIUS);
-        GRect outer = GRectCenteredCircle(O2CO2_OUTER_RADIUS);
-        for (int i = 0; i < COUNT_O2CO2; i++)
-        {
-            s_innerPoints[i] = gpoint_from_polar(inner, GOvalScaleModeFillCircle,
-                TRIG_MAX_ANGLE * 3 / 4 - TRIG_MAX_ANGLE * i / 2 / MAX_O2CO2);
-            s_outerPoints[i] = gpoint_from_polar(outer, GOvalScaleModeFillCircle,
-                TRIG_MAX_ANGLE * 1 / 4 + TRIG_MAX_ANGLE * i / 2 / MAX_O2CO2);
-
-            s_innerPoints[i].x -= O2CO2_BOUNDS.origin.x;
-            s_innerPoints[i].y -= O2CO2_BOUNDS.origin.y;
-            s_outerPoints[i].x -= O2CO2_BOUNDS.origin.x;
-            s_outerPoints[i].y -= O2CO2_BOUNDS.origin.y;
-        }
+        prv_o2co2_calc_points(s_innerPoints, s_outerPoints, 67, 84);
+        prv_o2co2_calc_points(s_innerPointsSmall, s_outerPointsSmall, 85, 92);
         co2Bitmap = gbitmap_create_with_resource(RESOURCE_ID_CO2);
         o2Bitmap = gbitmap_create_as_sub_bitmap(co2Bitmap, GRect(9, 0, 14, 11));
     }
 
+    layer->big = big;
     memset(&layer->o2Path, 0, sizeof(GPath));
     memset(&layer->co2Path, 0, sizeof(GPath));
     layer->layer = layer_create_with_data(O2CO2_BOUNDS, sizeof(O2CO2Layer*));
@@ -47,22 +54,30 @@ void o2co2_create(O2CO2Layer* layer, Layer* parentLayer)
     layer_set_update_proc(layer->layer, prv_o2co2_draw);
     layer_add_child(parentLayer, layer->layer);
 
-    layer->co2Text = bitmap_layer_create(GRect(152, 77, 23, 11));
-    bitmap_layer_set_bitmap(layer->co2Text, co2Bitmap);
-    bitmap_layer_set_compositing_mode(layer->co2Text, GCompOpSet);
-    layer_add_child(parentLayer, bitmap_layer_get_layer(layer->co2Text));
+    if (big)
+    {
+        layer->co2Text = bitmap_layer_create(GRect(152, 77, 23, 11));
+        bitmap_layer_set_bitmap(layer->co2Text, co2Bitmap);
+        bitmap_layer_set_compositing_mode(layer->co2Text, GCompOpSet);
+        layer_add_child(parentLayer, bitmap_layer_get_layer(layer->co2Text));
 
-    layer->o2Text = bitmap_layer_create(GRect(8, 77, 14, 11));
-    bitmap_layer_set_bitmap(layer->o2Text, o2Bitmap);
-    bitmap_layer_set_compositing_mode(layer->o2Text, GCompOpSet);
-    layer_add_child(parentLayer, bitmap_layer_get_layer(layer->o2Text));
+        layer->o2Text = bitmap_layer_create(GRect(8, 77, 14, 11));
+        bitmap_layer_set_bitmap(layer->o2Text, o2Bitmap);
+        bitmap_layer_set_compositing_mode(layer->o2Text, GCompOpSet);
+        layer_add_child(parentLayer, bitmap_layer_get_layer(layer->o2Text));
+    }
+    else
+        layer->o2Text = layer->co2Text = NULL;
 }
 
 void o2co2_destroy(O2CO2Layer* layer)
 {
     layer_destroy(layer->layer);
-    bitmap_layer_destroy(layer->o2Text);
-    bitmap_layer_destroy(layer->co2Text);
+    if (layer->big)
+    {
+        bitmap_layer_destroy(layer->o2Text);
+        bitmap_layer_destroy(layer->co2Text);
+    }
     layer->layer = NULL;
     layer->o2Text = NULL;
     layer->co2Text = NULL;
@@ -79,14 +94,17 @@ void o2co2_set_values(O2CO2Layer* layer, uint8_t o2, uint8_t co2)
     layer->co2 = co2;
     //if (o2 > 0 && co2 > 0)
     //    o2--, co2--;
+
+    const GPoint* innerPoints = layer->big ? s_innerPoints : s_innerPointsSmall;
+    const GPoint* outerPoints = layer->big ? s_outerPoints : s_outerPointsSmall;
     
-    memcpy(layer->points, s_innerPoints, sizeof(GPoint) * o2);
-    memcpy(layer->points + o2, s_outerPoints + COUNT_O2CO2 - o2, sizeof(GPoint) * o2);
+    memcpy(layer->points, innerPoints, sizeof(GPoint) * o2);
+    memcpy(layer->points + o2, outerPoints + COUNT_O2CO2 - o2, sizeof(GPoint) * o2);
     layer->o2Path.points = layer->points;
     layer->o2Path.num_points = o2 * 2;
 
-    memcpy(layer->points + o2 * 2, s_innerPoints + COUNT_O2CO2 - co2, sizeof(GPoint) * co2);
-    memcpy(layer->points + o2 * 2 + co2, s_outerPoints, sizeof(GPoint) * co2);
+    memcpy(layer->points + o2 * 2, innerPoints + COUNT_O2CO2 - co2, sizeof(GPoint) * co2);
+    memcpy(layer->points + o2 * 2 + co2, outerPoints, sizeof(GPoint) * co2);
     layer->co2Path.points = layer->points + o2 * 2;
     layer->co2Path.num_points = co2 * 2;
 
