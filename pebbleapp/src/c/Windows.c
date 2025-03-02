@@ -6,7 +6,7 @@ static void prv_main_window_load(Window* window)
     window_set_background_color(window, GColorBlack);
     Layer *window_layer = window_get_root_layer(window);
 
-    planet_create(&m->planet, window_layer);
+    planet_create(&m->planet, true, window_layer);
     o2co2_create(&m->o2co2, window_layer);
     //curved_text_create(&s_bodyName, window_layer);
     //curved_text_set_text(&s_bodyName, "TRITON");
@@ -89,6 +89,7 @@ static void prv_scan_window_load(Window* window)
     Layer *window_layer = window_get_root_layer(window);
 
     scan_decoration_create(&scan->decoration, window_layer);
+    planet_create(&scan->planet, false, window_layer);
 
     scan->bodyName = text_layer_create(GRect(0, 51, 180, 24));
     text_layer_set_text_alignment(scan->bodyName, GTextAlignmentCenter);
@@ -150,6 +151,7 @@ static void prv_scan_window_unload(Window* window)
     text_layer_destroy(scan->gravity);
     text_layer_destroy(scan->legend);
     scan_decoration_destroy(&scan->decoration);
+    planet_destroy(&scan->planet);
 }
 
 static void prv_scan_window_appear(Window* window)
@@ -176,6 +178,10 @@ void scan_window_destroy(ScanWindow* scan)
 
 void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes)
 {
+    if (changes & STATE_TIME)
+    {
+        planet_set_time(&scan->planet, game.time);
+    }
     if (changes & STATE_NAMES)
     {
         layer_mark_dirty(text_layer_get_layer(scan->bodyName));

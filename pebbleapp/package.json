@@ -25,6 +25,11 @@
         },
         {
           "type": "bitmap",
+          "name": "PLANET_SMALL",
+          "file": "images/planet-small.png"
+        },
+        {
+          "type": "bitmap",
           "name": "CO2",
           "file": "images/co2.png"
         },

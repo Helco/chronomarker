@@ -40,7 +40,7 @@ static void prv_init(void) {
   scan_window_create(&app.scan);
   communication_init();
 
-  ///main_window_push(&app.main);
+  main_window_push(&app.main);
   scan_window_push(&app.scan);
 }
 

@@ -93,20 +93,20 @@ void curved_text_set_text(CurvedTextLayer* layer, const char* text);
 // ------------------------------------------------------------------------------------------------
 
 #define SUN_POINTS 16
+#define SUN_SMALL_POINTS 8
 typedef struct PlanetLayer
 {
     Layer* layer;
     GPath path;
     int lastTime;
+    bool big;
     GPoint points[SUN_POINTS * 2];
 } PlanetLayer;
-void planet_create(PlanetLayer* layer, Layer* parentLayer);
+void planet_create(PlanetLayer* layer, bool big, Layer* parentLayer);
 void planet_destroy(PlanetLayer* layer);
 void planet_set_time(PlanetLayer* layer, int time);
 
 // ------------------------------------------------------------------------------------------------
-
-
 
 typedef struct ScanDecorationLayer
 {
@@ -207,6 +207,7 @@ typedef struct ScanWindow
     TextLayer* gravity;
     TextLayer* legend;
     ScanDecorationLayer decoration;
+    PlanetLayer planet;
     char temperatureBuffer[SCAN_BUFFER_SIZE];
     char oxygenBuffer[SCAN_BUFFER_SIZE];
     char gravityBuffer[SCAN_BUFFER_SIZE];

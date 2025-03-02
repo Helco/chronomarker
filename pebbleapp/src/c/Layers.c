@@ -435,23 +435,29 @@ void prv_curved_text_draw(Layer* layerPbl, GContext* ctx)
 
 // ------------------------------------------------------------------------------------------------
 
-static GBitmap* s_planetBitmap;
+static GBitmap* s_planetBitmap, *s_planetSmallBitmap;
 
-void planet_create(PlanetLayer* layer, Layer* parentLayer)
+void planet_create(PlanetLayer* layer, bool big, Layer* parentLayer)
 {
-    if (s_planetBitmap == NULL)
-    {
+    if (big && s_planetBitmap == NULL)
         s_planetBitmap = gbitmap_create_with_resource(RESOURCE_ID_PLANET);
-    }
+    if (!big && s_planetSmallBitmap == NULL)
+        s_planetSmallBitmap = gbitmap_create_with_resource(RESOURCE_ID_PLANET_SMALL);
+    const int layerRadius = big ? 50 : 21;
+    const GRect bounds = big
+        ? GRectCenteredCircle(layerRadius)
+        : GRect(90 - layerRadius, 7, layerRadius * 2, layerRadius * 2);
 
-    layer->layer = layer_create_with_data(GRectCenteredCircle(50), sizeof(PlanetLayer*));
+    layer->layer = layer_create_with_data(bounds, sizeof(PlanetLayer*));
     *(PlanetLayer**)layer_get_data(layer->layer) = layer;
     layer_set_update_proc(layer->layer, prv_planet_draw);
     layer_add_child(parentLayer, layer->layer);
+    layer_set_clips(layer->layer, false);
     layer->lastTime = -1;
+    layer->big = big;
     layer->path.points = layer->points;
-    layer->path.num_points = SUN_POINTS * 2;
-    layer->path.offset = GPoint(50, 50);
+    layer->path.num_points = (big ? SUN_POINTS : SUN_SMALL_POINTS) * 2;
+    layer->path.offset = GPoint(layerRadius, layerRadius);
     layer->path.rotation = 0;
 }
 
@@ -472,8 +478,8 @@ void planet_set_time(PlanetLayer* layer, int time)
 
     const int32_t MaxTime = 1 << BITS_TIME;
     const int32_t HalfTime = 1 << (BITS_TIME - 1);
-    const int32_t AnglePerPoint = TRIG_MAX_ANGLE / 2 / SUN_POINTS;
-    const int32_t OuterRadius = 50;
+    const int32_t AnglePerPoint = TRIG_MAX_ANGLE / 2 / (layer->big ? SUN_POINTS : SUN_SMALL_POINTS);
+    const int32_t OuterRadius = layer->big ? 50 : 19;
     const int32_t innerRadius = time < HalfTime
         ? -OuterRadius + OuterRadius * 4 * time / MaxTime
         : OuterRadius - OuterRadius * 4 * (time - HalfTime) / MaxTime;
@@ -517,10 +523,19 @@ void prv_planet_draw(Layer* layerPbl, GContext* ctx)
 {
     PlanetLayer* layer = *(PlanetLayer**)layer_get_data(layerPbl);
     graphics_context_set_antialiased(ctx, false);
-    graphics_context_set_fill_color(ctx, GColorLightGray);
-    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    if (!layer->big) // there is a white background for the small planet :(
+    {
+        graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+        graphics_context_set_fill_color(ctx, GColorBlack);
+        graphics_fill_circle(ctx, GPoint(21, 21), 20);
+    }
+
+    graphics_context_set_fill_color(ctx, layer->big ? GColorLightGray : GColorWhite);
     gpath_draw_filled(ctx, &layer->path);
-    graphics_draw_bitmap_in_rect(ctx, s_planetBitmap, GRect(0, 0, 100, 100));
+
+    GBitmap* bitmap = layer->big ? s_planetBitmap : s_planetSmallBitmap;
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_draw_bitmap_in_rect(ctx, bitmap, gbitmap_get_bounds(bitmap));
 }
 
 // ------------------------------------------------------------------------------------------------
