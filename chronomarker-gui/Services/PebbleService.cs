@@ -153,6 +153,8 @@ internal class PebbleService : IWatchService
         try
         {
             var transport = new NetPebble.Transports.WebsocketTransport("ws://127.0.0.1:38747");
+            //var transport = new NetPebble.Transports.WebsocketTransport("ws://192.168.178.89:9000");
+            //var transport = new NetPebble.Transports.BluetoothClassicTransport();
             await transport.ConnectAsync(default);
 
             // Connection
@@ -242,7 +244,7 @@ internal class PebbleService : IWatchService
                 Status = WatchStatus.Connected;
                 logMessage("Connected");
                 token.Register(connection.Cancellation.Cancel);
-                _ = Task.Run(() => TaskTimeout(connection));
+                //_ = Task.Run(() => TaskTimeout(connection));
                 await connection.Completion.Task;
                 HandleDisconnect(connection, "Unknown disconnection event");
             }

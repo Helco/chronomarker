@@ -12,7 +12,7 @@ typedef struct BitStream
 void bitstream_init(BitStream* stream, const uint8_t* data, const int size)
 {
   stream->values = (const uint16_t*)data;
-  stream->valueCount = size;
+  stream->valueCount = size / 2;
   stream->nextValue = 0;
   stream->bits = 0;
   stream->bitsLeft = 0;
@@ -56,13 +56,13 @@ bool bitstream_hasAtLeast(const BitStream* stream, int bits)
 #define BITS_PACKETTYPE 5
 typedef enum PacketType
 {
-  PACKET_NOP,
+  PACKET_STOP = 0,
   PACKET_RESET,
   PACKET_O2,
   PACKET_CO2,
   PACKET_HEADING,
-  PACKET_BODYNAME,
   PACKET_PLAYERFLAGS,
+  PACKET_BODYNAME,
   PACKET_PLANETSTATS,
   PACKET_TIME,
   PACKET_LOCATIONNAME,
@@ -95,7 +95,7 @@ StateChanges handle_packet(const uint8_t* data, const int size)
     PacketType type = bitstream_read(&stream, BITS_PACKETTYPE);
     switch(type)
     {
-      case PACKET_NOP: break;
+      case PACKET_STOP: return changes;
       case PACKET_RESET:
         memset(game.personalEffects, 0, sizeof(game.personalEffects));
         memset(game.envEffects, 0, sizeof(game.envEffects));
