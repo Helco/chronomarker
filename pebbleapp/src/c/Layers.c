@@ -4,6 +4,8 @@ static void prv_o2co2_draw(struct Layer *layer, GContext* ctx);
 static void prv_effect_icon_draw(struct Layer *layer, GContext* ctx);
 static void prv_curved_text_draw(struct Layer *layer, GContext* ctx);
 static void prv_planet_draw(struct Layer* layer, GContext* ctx);
+static void prv_scan_decoration_crescent_draw(struct Layer* layer, GContext* ctx);
+static void prv_scan_decoration_center_draw(struct Layer* layer, GContext* ctx);
 
 static GPoint s_innerPoints[COUNT_O2CO2]; // anti-clockwise
 static GPoint s_outerPoints[COUNT_O2CO2]; // clock-wise
@@ -519,4 +521,78 @@ void prv_planet_draw(Layer* layerPbl, GContext* ctx)
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     gpath_draw_filled(ctx, &layer->path);
     graphics_draw_bitmap_in_rect(ctx, s_planetBitmap, GRect(0, 0, 100, 100));
+}
+
+// ------------------------------------------------------------------------------------------------
+
+#define SCAN_CRESCENT_POINTS 8
+#define SCAN_CRESCENT_INNER_POINTS 8
+#define SCAN_CRESCENT_RADIUS (174/2)
+#define SCAN_CRESCENT_ANGLE DEG_TO_TRIGANGLE(90 - 27)
+
+static GPoint s_scanTopPoints[SCAN_CRESCENT_POINTS];
+static GPoint s_scanBottomPoints[SCAN_CRESCENT_POINTS];
+
+void scan_decoration_create(ScanDecorationLayer* layer, Layer* parentLayer)
+{
+    layer->centerLayer = layer_create(GRect(65, 102, 50, 38));
+    layer_set_update_proc(layer->centerLayer, prv_scan_decoration_center_draw);
+    layer_add_child(parentLayer, layer->centerLayer);
+
+    layer->bottomLayer = layer_create_with_data(GRect(0, 144, 180, 36), sizeof(GPath*));
+    *(GPath**)layer_get_data(layer->bottomLayer) = &layer->bottomPath;
+    layer_set_update_proc(layer->bottomLayer, prv_scan_decoration_crescent_draw);
+    layer_add_child(parentLayer, layer->bottomLayer);
+
+    layer->topLayer = layer_create_with_data(GRect(0, 0, 180, 36), sizeof(GPath*));
+    *(GPath**)layer_get_data(layer->topLayer) = &layer->topPath;
+    layer_set_update_proc(layer->topLayer, prv_scan_decoration_crescent_draw);
+    layer_add_child(parentLayer, layer->topLayer);
+
+    layer->bottomPath.points = s_scanBottomPoints;
+    layer->topPath.points = s_scanTopPoints;
+    layer->bottomPath.num_points = layer->topPath.num_points = SCAN_CRESCENT_POINTS;
+    layer->bottomPath.offset = layer->topPath.offset = GPointZero;
+    layer->bottomPath.rotation = layer->topPath.rotation = 0;
+
+    static bool hasCalculatedPoints = false;
+    if (hasCalculatedPoints)
+        return;
+    hasCalculatedPoints = true;
+    for (int i = 0; i < SCAN_CRESCENT_POINTS; i++)
+    {
+        int angle = -SCAN_CRESCENT_ANGLE + SCAN_CRESCENT_ANGLE * 2 * i / (SCAN_CRESCENT_POINTS - 1);
+        int x = ((sin_lookup(angle) * SCAN_CRESCENT_RADIUS) >> 16);
+        int y = ((cos_lookup(angle) * SCAN_CRESCENT_RADIUS) >> 16);
+        s_scanTopPoints[i] = GPoint(x + 90, SCAN_CRESCENT_RADIUS - y);
+        s_scanBottomPoints[i] = GPoint(x + 90, y - 40); 
+    }
+}
+
+void scan_decoration_destroy(ScanDecorationLayer* layer)
+{
+    layer_destroy(layer->centerLayer);
+    layer_destroy(layer->bottomLayer);
+    layer_destroy(layer->topLayer);
+}
+
+static void prv_scan_decoration_center_draw(struct Layer* layer, GContext* ctx)
+{
+    graphics_context_set_fill_color(ctx, GColorDarkGray);
+    graphics_fill_rect(ctx, GRect(0, 0, 3, 38), 0, 0);
+    graphics_fill_rect(ctx, GRect(47, 0, 3, 38), 0, 0);
+}
+
+static void prv_scan_decoration_crescent_draw(struct Layer* layer, GContext* ctx)
+{
+    GPath* path = *(GPath**)layer_get_data(layer);
+    graphics_context_set_antialiased(ctx, false);
+    graphics_context_set_fill_color(ctx, GColorLightGray);
+    gpath_draw_filled(ctx, path);
+    //return;
+    graphics_context_set_fill_color(ctx, GColorBlack);
+    if (path->points == s_scanTopPoints)
+        graphics_fill_rect(ctx, GRect(0, 31, 180, 3), 0, 0);
+    else
+        graphics_fill_rect(ctx, GRect(0, 3, 180, 3), 0, 0);
 }

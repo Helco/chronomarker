@@ -29,6 +29,8 @@
 #define BITS_EFFECTS 3
 #define BITS_ALERTKIND 4
 
+// ------------------------------------------------------------------------------------------------
+
 typedef struct O2CO2Layer
 {
     Layer* layer;
@@ -41,6 +43,8 @@ typedef struct O2CO2Layer
 void o2co2_create(O2CO2Layer* layer, Layer* parentLayer);
 void o2co2_destroy(O2CO2Layer* layer);
 void o2co2_set_values(O2CO2Layer* layer, uint8_t o2, uint8_t co2);
+
+// ------------------------------------------------------------------------------------------------
 
 typedef enum EffectIcon
 {
@@ -68,6 +72,8 @@ void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int position
 void effect_icon_destroy(EffectIconLayer* layer);
 void effect_icon_set_icon(EffectIconLayer* layer, EffectIcon icon);
 
+// ------------------------------------------------------------------------------------------------
+
 #define BITS_BODY (4)
 #define MAX_BODY_LENGTH (1 << BITS_BODY)
 
@@ -84,6 +90,8 @@ void curved_text_create(CurvedTextLayer* layer, Layer* parentLayer);
 void curved_text_destroy(CurvedTextLayer* layer);
 void curved_text_set_text(CurvedTextLayer* layer, const char* text);
 
+// ------------------------------------------------------------------------------------------------
+
 #define SUN_POINTS 16
 typedef struct PlanetLayer
 {
@@ -95,6 +103,24 @@ typedef struct PlanetLayer
 void planet_create(PlanetLayer* layer, Layer* parentLayer);
 void planet_destroy(PlanetLayer* layer);
 void planet_set_time(PlanetLayer* layer, int time);
+
+// ------------------------------------------------------------------------------------------------
+
+
+
+typedef struct ScanDecorationLayer
+{
+    Layer* centerLayer;
+    Layer* topLayer;
+    Layer* bottomLayer;
+    GPath topPath;
+    GPath bottomPath;
+} ScanDecorationLayer;
+
+void scan_decoration_create(ScanDecorationLayer* layer, Layer* parentLayer);
+void scan_decoration_destroy(ScanDecorationLayer* layer);
+
+// ------------------------------------------------------------------------------------------------
 
 typedef enum StateChanges
 {
@@ -154,6 +180,8 @@ typedef struct GameAlert
 extern GameState game;
 void communication_init();
 
+// ------------------------------------------------------------------------------------------------
+
 typedef struct MainWindow
 {
     Window* window;
@@ -166,6 +194,8 @@ void main_window_destroy(MainWindow* window);
 void main_window_handle_gamestate(MainWindow* window, StateChanges changes);
 void main_window_push(MainWindow* window);
 
+// ------------------------------------------------------------------------------------------------
+
 #define SCAN_BUFFER_SIZE 8
 typedef struct ScanWindow
 {
@@ -176,6 +206,7 @@ typedef struct ScanWindow
     TextLayer* oxygen;
     TextLayer* gravity;
     TextLayer* legend;
+    ScanDecorationLayer decoration;
     char temperatureBuffer[SCAN_BUFFER_SIZE];
     char oxygenBuffer[SCAN_BUFFER_SIZE];
     char gravityBuffer[SCAN_BUFFER_SIZE];
@@ -184,6 +215,8 @@ void scan_window_create(ScanWindow* scan);
 void scan_window_destroy(ScanWindow* scan);
 void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes);
 void scan_window_push(ScanWindow* scan);
+
+// ------------------------------------------------------------------------------------------------
 
 void app_handle_gamestate(StateChanges changes);
 void app_handle_gamealert(const GameAlert* alert);

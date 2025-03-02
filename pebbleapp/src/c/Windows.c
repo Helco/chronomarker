@@ -88,6 +88,8 @@ static void prv_scan_window_load(Window* window)
     window_set_background_color(window, GColorBlack);
     Layer *window_layer = window_get_root_layer(window);
 
+    scan_decoration_create(&scan->decoration, window_layer);
+
     scan->bodyName = text_layer_create(GRect(0, 51, 180, 24));
     text_layer_set_text_alignment(scan->bodyName, GTextAlignmentCenter);
     text_layer_set_text_color(scan->bodyName, GColorWhite);
@@ -96,15 +98,15 @@ static void prv_scan_window_load(Window* window)
     text_layer_set_text(scan->bodyName, game.bodyName);
     layer_add_child(window_layer, text_layer_get_layer(scan->bodyName));
 
-    scan->locationName = text_layer_create(GRect(8, 76, 164, 18));
+    scan->locationName = text_layer_create(GRect(8, 74, 164, 18));
     text_layer_set_text_alignment(scan->locationName, GTextAlignmentCenter);
     text_layer_set_text_color(scan->locationName, GColorLightGray);
     text_layer_set_background_color(scan->locationName, GColorClear);
-    text_layer_set_font(scan->locationName, s_profontwindows_small);
+    text_layer_set_font(scan->locationName, s_profontwindows_big);
     text_layer_set_text(scan->locationName, game.locationName);
     layer_add_child(window_layer, text_layer_get_layer(scan->locationName));
 
-    scan->temperature = text_layer_create(GRect(9, 102, 60, 38));
+    scan->temperature = text_layer_create(GRect(9, 100, 60, 38));
     text_layer_set_overflow_mode(scan->temperature, GTextOverflowModeTrailingEllipsis);
     text_layer_set_text_alignment(scan->temperature, GTextAlignmentCenter);
     text_layer_set_text_color(scan->temperature, GColorWhite);
@@ -113,7 +115,7 @@ static void prv_scan_window_load(Window* window)
     text_layer_set_text(scan->temperature, scan->temperatureBuffer);
     layer_add_child(window_layer, text_layer_get_layer(scan->temperature));
 
-    scan->oxygen = text_layer_create(GRect(68, 102, 44, 18));
+    scan->oxygen = text_layer_create(GRect(68, 100, 44, 18));
     text_layer_set_text_alignment(scan->oxygen, GTextAlignmentCenter);
     text_layer_set_text_color(scan->oxygen, GColorWhite);
     text_layer_set_background_color(scan->oxygen, GColorClear);
@@ -121,7 +123,7 @@ static void prv_scan_window_load(Window* window)
     text_layer_set_text(scan->oxygen, scan->oxygenBuffer);
     layer_add_child(window_layer, text_layer_get_layer(scan->oxygen));
 
-    scan->gravity = text_layer_create(GRect(115, 102, 52, 18));
+    scan->gravity = text_layer_create(GRect(115, 100, 52, 18));
     text_layer_set_text_alignment(scan->gravity, GTextAlignmentCenter);
     text_layer_set_text_color(scan->gravity, GColorWhite);
     text_layer_set_background_color(scan->gravity, GColorClear);
@@ -129,7 +131,7 @@ static void prv_scan_window_load(Window* window)
     text_layer_set_text(scan->gravity, scan->gravityBuffer);
     layer_add_child(window_layer, text_layer_get_layer(scan->gravity));
 
-    scan->legend = text_layer_create(GRect(19, 122, 142, 16));
+    scan->legend = text_layer_create(GRect(19, 120, 142, 16));
     text_layer_set_text_alignment(scan->legend, GTextAlignmentCenter);
     text_layer_set_text_color(scan->legend, GColorLightGray);
     text_layer_set_background_color(scan->legend, GColorClear);
@@ -147,6 +149,7 @@ static void prv_scan_window_unload(Window* window)
     text_layer_destroy(scan->oxygen);
     text_layer_destroy(scan->gravity);
     text_layer_destroy(scan->legend);
+    scan_decoration_destroy(&scan->decoration);
 }
 
 static void prv_scan_window_appear(Window* window)
