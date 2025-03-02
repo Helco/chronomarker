@@ -30,6 +30,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NetPebble\NetPebble.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AvaloniaXaml Update="Views\MockGameWindow.axaml">
       <SubType>Designer</SubType>
     </AvaloniaXaml>

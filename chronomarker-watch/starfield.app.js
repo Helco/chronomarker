@@ -147,12 +147,14 @@ function drawMoon (phase) {
   for (i = 0; i < 3.142; i += inc) {
     s = Math.sin(i)
     c = Math.cos(i)
-    poly.push(x - r1 * c * sT + r2 * s * cT, y + r1 * c * cT + r2 * s * sT)
+    poly.push(x - r1 * c * sT + r2 * s * cT,
+              y + r1 * c * cT + r2 * s * sT)
   }
   for (; i < 6.283; i += inc) {
     s = Math.sin(i)
     c = Math.cos(i)
-    poly.push(x - r1 * c * sT + r1 * s * cT, y + r1 * c * cT + r1 * s * sT)
+    poly.push(x - r1 * c * sT + r1 * s * cT,
+              y + r1 * c * cT + r1 * s * sT)
   }
   if (r2 - r1 < 2 * r0) {
     g.setColor('#ddd').fillPolyAA(poly)

@@ -9,8 +9,8 @@ internal class Program
     {
         Console.WriteLine("Hello, World!");
         //var transport = new WebsocketTransport("ws://127.0.0.1:38375");
-        //var transport = new WebsocketTransport("ws://192.168.178.89:9000");
-        var transport = new BluetoothClassicTransport();
+        var transport = new WebsocketTransport("ws://192.168.178.89:9000");
+        //var transport = new BluetoothClassicTransport();
         await transport.ConnectAsync(default);
 
         while (true)

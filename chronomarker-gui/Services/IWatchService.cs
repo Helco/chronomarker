@@ -18,6 +18,7 @@ internal enum WatchStatus
 internal enum WatchType
 {
     LPV6,
+    PebbleDevConnection,
 
 #if DEBUG
     DebugTinyProtocol

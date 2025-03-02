@@ -12,6 +12,22 @@
 #define BITS_O2CO2 (6)
 #define COUNT_O2CO2 (1 << BITS_O2CO2)
 #define MAX_O2CO2 (COUNT_O2CO2 - 1)
+#define BITS_ALERTTEXT (5)
+#define MAX_ALERTTEXT_LENGTH ((1 << BITS_ALERTTEXT) - 1)
+#define BITS_HEADING 7
+#define BITS_PLAYERFLAGS 3
+#define BITS_TIME 6
+#define BITS_BODYNAME 4
+#define MAX_BODYNAME_LENGTH ((1 << BITS_BODYNAME) - 1)
+#define BITS_LOCNAME 5
+#define MAX_LOCNAME_LENGTH ((1 << BITS_LOCNAME) - 1)
+#define BITS_PLANETGRAV 8
+#define BITS_PLANETTEMP 11
+#define BITS_PLANETOXYGEN 7
+#define MAX_PERSONALEFFECTS 5
+#define MAX_ENVEFFECTS 4
+#define BITS_EFFECTS 3
+#define BITS_ALERTKIND 4
 
 typedef struct O2CO2Layer
 {
@@ -41,6 +57,7 @@ typedef enum EffectIcon
     EFFECT_ICON_HEALING,
 
     EFFECT_ICON_COUNT = EFFECT_ICON_HEALING - 1,
+    EFFECT_ICON_FIRST_PERSONAL = EFFECT_ICON_CARDIO,
     EFFECT_ICON_FIRST_ENVIRONMENTAL = EFFECT_ICON_RADIATION
 } EffectIcon;
 typedef struct EffectIconLayer
@@ -66,3 +83,76 @@ typedef struct CurvedTextLayer
 void curved_text_create(CurvedTextLayer* layer, Layer* parentLayer);
 void curved_text_destroy(CurvedTextLayer* layer);
 void curved_text_set_text(CurvedTextLayer* layer, const char* text);
+
+#define SUN_POINTS 16
+typedef struct SunLayer
+{
+    Layer* layer;
+    GPath path;
+    int lastTime;
+    GPoint points[SUN_POINTS];
+} SunLayer;
+void sun_create(SunLayer* layer, Layer* parentLayer);
+void sun_destroy(SunLayer* layer);
+void sun_set_time(SunLayer* layer, int time);
+
+typedef enum StateChanges
+{
+    STATE_O2CO2 = 1 << 0,
+    STATE_HEADING = 1 << 1,
+    STATE_PLAYERFLAGS = 1 << 2,
+    STATE_TIME = 1 << 3,
+    STATE_NAMES = 1 << 4,
+    STATE_PLANETSTATS = 1 << 5,
+    STATE_PERSONALEFFECTS = 1 << 6,
+    STATE_ENVEFFECTS = 1 << 7,
+
+} StateChanges;
+typedef enum PlayerFlags
+{
+    PLAYER_IS_SCANNING= 1 << 0,
+    PLAYER_IN_SPACESHIP = 1 << 1,
+    PLAYER_IS_LANDED = 1 << 2
+} PlayerFlags;
+typedef struct GameState
+{
+    uint8_t
+        o2, co2,
+        heading,
+        time,
+        planetGrav,
+        planetOxygen;
+    int16_t planetTemperature;
+    PlayerFlags playerFlags;
+    EffectIcon personalEffects[MAX_PERSONALEFFECTS];
+    EffectIcon envEffects[MAX_ENVEFFECTS];
+    char bodyName[MAX_BODYNAME_LENGTH + 1];
+    char locationName[MAX_LOCNAME_LENGTH + 1];
+
+} GameState;
+typedef enum GameAlertKind
+{
+    GAMEALERT_NONE = 0,
+    GAMEALERT_RADIATION,
+    GAMEALERT_THERMAL,
+    GAMEALERT_AIRBORNE,
+    GAMEALERT_CORROSIVE,
+    GAMEALERT_CARDIO,
+    GAMEALERT_SKELETAL,
+    GAMEALERT_NERVOUS,
+    GAMEALERT_DIGESTIVE,
+    GAMEALERT_MISC,
+    GAMEALERT_RESTORE
+} GameAlertKind;
+typedef struct GameAlert
+{
+    GameAlertKind kind;
+    bool positive;
+    char title[MAX_ALERTTEXT_LENGTH + 1];
+    char subtitle[MAX_ALERTTEXT_LENGTH + 1];
+} GameAlert;
+extern GameState game;
+void communication_init();
+
+void app_handle_gamestate(StateChanges changes);
+void app_handle_gamealert(const GameAlert* alert);
