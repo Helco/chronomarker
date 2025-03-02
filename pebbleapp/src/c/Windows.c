@@ -54,7 +54,7 @@ void main_window_handle_gamestate(MainWindow* m, StateChanges changes)
     if (changes & STATE_O2CO2)
         o2co2_set_values(&m->o2co2, game.o2, game.co2);
     if (changes & STATE_TIME)
-        planet_set_time(&m->planet, game.time);
+        planet_set_time(&m->planet, game.bodyType == BODY_SHIP ? SPACE_TIME : game.time);
     if (changes & STATE_PERSONALEFFECTS)
     {
         for (int i = 0; i < MAX_PERSONALEFFECTS; i++)
@@ -92,21 +92,20 @@ static void prv_scan_window_load(Window* window)
     planet_create(&scan->planet, false, window_layer);
     o2co2_create(&scan->o2co2, false, window_layer);
 
-    scan->bodyName = text_layer_create(GRect(0, 51, 180, 24));
-    text_layer_set_text_alignment(scan->bodyName, GTextAlignmentCenter);
-    text_layer_set_text_color(scan->bodyName, GColorWhite);
-    text_layer_set_background_color(scan->bodyName, GColorClear);
-    text_layer_set_font(scan->bodyName, s_profontwindows_big);
-    text_layer_set_text(scan->bodyName, game.bodyName);
-    layer_add_child(window_layer, text_layer_get_layer(scan->bodyName));
-
-    scan->locationName = text_layer_create(GRect(8, 74, 164, 18));
+    scan->locationName = text_layer_create(GRect(0, 51, 180, 24));
     text_layer_set_text_alignment(scan->locationName, GTextAlignmentCenter);
-    text_layer_set_text_color(scan->locationName, GColorLightGray);
+    text_layer_set_text_color(scan->locationName, GColorWhite);
     text_layer_set_background_color(scan->locationName, GColorClear);
     text_layer_set_font(scan->locationName, s_profontwindows_big);
-    text_layer_set_text(scan->locationName, game.locationName);
+    text_layer_set_text(scan->locationName, game.bodyName);
     layer_add_child(window_layer, text_layer_get_layer(scan->locationName));
+
+    scan->bodyType = text_layer_create(GRect(8, 74, 164, 18));
+    text_layer_set_text_alignment(scan->bodyType, GTextAlignmentCenter);
+    text_layer_set_text_color(scan->bodyType, GColorLightGray);
+    text_layer_set_background_color(scan->bodyType, GColorClear);
+    text_layer_set_font(scan->bodyType, s_profontwindows_big);
+    layer_add_child(window_layer, text_layer_get_layer(scan->bodyType));
 
     scan->temperature = text_layer_create(GRect(9, 100, 60, 38));
     text_layer_set_overflow_mode(scan->temperature, GTextOverflowModeTrailingEllipsis);
@@ -145,8 +144,8 @@ static void prv_scan_window_load(Window* window)
 static void prv_scan_window_unload(Window* window)
 {
     ScanWindow* scan = (ScanWindow*)window_get_user_data(window);
-    text_layer_destroy(scan->bodyName);
     text_layer_destroy(scan->locationName);
+    text_layer_destroy(scan->bodyType);
     text_layer_destroy(scan->temperature);
     text_layer_destroy(scan->oxygen);
     text_layer_destroy(scan->gravity);
@@ -178,6 +177,18 @@ void scan_window_destroy(ScanWindow* scan)
     window_destroy(scan->window);
 }
 
+static const char* s_bodyTypeNames[] =
+{
+    "UNKNOWN",
+    "STAR",
+    "PLANET",
+    "MOON",
+    "SATELLITE",
+    "ASTEROID BELT",
+    "STATION",
+    "SHIP"
+};
+
 void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes)
 {
     if (changes & STATE_O2CO2)
@@ -186,11 +197,10 @@ void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes)
     }
     if (changes & STATE_TIME)
     {
-        planet_set_time(&scan->planet, game.time);
+        planet_set_time(&scan->planet, game.bodyType == BODY_SHIP ? SPACE_TIME : game.time);
     }
     if (changes & STATE_NAMES)
     {
-        layer_mark_dirty(text_layer_get_layer(scan->bodyName));
         layer_mark_dirty(text_layer_get_layer(scan->locationName));
     }
     if (changes & STATE_PLANETSTATS)
@@ -202,6 +212,7 @@ void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes)
         layer_mark_dirty(text_layer_get_layer(scan->temperature));
         layer_mark_dirty(text_layer_get_layer(scan->oxygen));
         layer_mark_dirty(text_layer_get_layer(scan->gravity));
+        text_layer_set_text(scan->bodyType, s_bodyTypeNames[game.bodyType]);
     }
 }
 

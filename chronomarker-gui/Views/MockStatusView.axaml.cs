@@ -36,7 +36,7 @@ namespace Chronomarker.Views
                     fOxygenPercent = 90,
                     fTemperature = 24,
                     sBodyName = "Hemerlo IV",
-                    sLocationName = "UI Framework Hell"
+                    sLocationName = "Hemerlo IV"
                 });
                 gameService.SendMessage(new LocalEnvFrequentMessage()
                 {
@@ -150,6 +150,15 @@ namespace Chronomarker.Views
             });
         }
 
+        private void BodyTypeChanged(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+        {
+            var comboBox = (ComboBox)sender!;
+            gameService.SendMessage(LocalEnvironmentMessage with
+            {
+                uBodyType = (uint)comboBox.SelectedIndex
+            });
+        }
+
         private LocalEnvironmentMessage LocalEnvironmentMessage => new()
         {
             bInSpaceship = statusModel.IsInSpaceship,
@@ -159,7 +168,8 @@ namespace Chronomarker.Views
             fOxygenPercent = statusModel.Oxygen,
             fTemperature = statusModel.Temperature,
             sBodyName = statusModel.BodyName,
-            sLocationName = statusModel.LocationName
+            sLocationName = statusModel.LocationName,
+            uBodyType = (uint)statusModel.BodyType
         };
 
         private void LocalTimeChanged(object? sender, RangeBaseValueChangedEventArgs e)

@@ -127,7 +127,8 @@ StateChanges handle_packet(const uint8_t* data, const int size)
         game.planetGrav = bitstream_read(&stream, BITS_PLANETGRAV);
         game.planetTemperature = bitstream_read(&stream, 11) - 294;
         game.planetOxygen = bitstream_read(&stream, 7);
-        changes |= STATE_PLANETSTATS;
+        game.bodyType = bitstream_read(&stream, BITS_BODYTYPE);
+        changes |= STATE_PLANETSTATS | STATE_TIME;
         break;
       case PACKET_TIME:
         game.time = bitstream_read(&stream, 6);

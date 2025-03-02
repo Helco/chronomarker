@@ -3,6 +3,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:Chronomarker.ViewModels"
+             xmlns:s="clr-namespace:Chronomarker.Services"
+             xmlns:clr="clr-namespace:Chronomarker"
              mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="600"
              x:Class="Chronomarker.Views.MockStatusView"
              x:DataType="vm:StatusModel">
@@ -19,7 +21,7 @@
       <vm:StatusModel.Oxygen>90</vm:StatusModel.Oxygen>
       <vm:StatusModel.Temperature>24</vm:StatusModel.Temperature>
       <vm:StatusModel.BodyName>Hemerlo IV</vm:StatusModel.BodyName>
-      <vm:StatusModel.LocationName>UI Framework Hell</vm:StatusModel.LocationName>
+      <vm:StatusModel.LocationName>Hemerlo IV</vm:StatusModel.LocationName>
       <vm:StatusModel.LocalTime>0.7</vm:StatusModel.LocalTime>
       <vm:StatusModel.HasCardioEffect>False</vm:StatusModel.HasCardioEffect>
       <vm:StatusModel.HasSkeletalEffect>False</vm:StatusModel.HasSkeletalEffect>
@@ -93,10 +95,15 @@
 
     <Separator/>
     <TextBlock Text="Environment:" HorizontalAlignment="Left" FontWeight="Bold"/>
-    <Grid ColumnDefinitions="Auto, *, *">
-      <TextBlock Text="Body / Location:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left" Grid.Column="0"/>
+    <Grid ColumnDefinitions="Auto, *, *, *">
+      <TextBlock Text="Body:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left" Grid.Column="0"/>
       <TextBox Text="{Binding BodyName, Mode=OneWay}" Margin="0, 0, 10, 0" Grid.Column="1" MaxLength="16" LostFocus="BodyNameUnfocused"/>
-      <TextBox Text="{Binding LocationName, Mode=OneWay}" Grid.Column="2" MaxLength="32" LostFocus="LocationNameUnfocused" />
+      <TextBox Text="{Binding LocationName, Mode=OneWay}" Grid.Column="2"  Margin="0, 0, 10, 0"  MaxLength="32" LostFocus="LocationNameUnfocused" />
+      <ComboBox SelectedItem="{Binding BodyType}"
+                SelectionChanged="BodyTypeChanged"
+                  HorizontalAlignment="Stretch"
+                  ItemsSource="{Binding Source={clr:EnumBindingSource {x:Type s:BodyType}}}"
+                  Grid.Column="3"/>
     </Grid>
     <DockPanel>
       <TextBlock Text="Effects:" VerticalAlignment="Center" Margin="0, 0, 10, 0" DockPanel.Dock="Left"/>

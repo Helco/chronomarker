@@ -24,6 +24,7 @@
 #define BITS_PLANETGRAV 8
 #define BITS_PLANETTEMP 11
 #define BITS_PLANETOXYGEN 7
+#define BITS_BODYTYPE 3
 #define MAX_PERSONALEFFECTS 5
 #define MAX_ENVEFFECTS 4
 #define BITS_EFFECTS 3
@@ -95,6 +96,7 @@ void curved_text_set_text(CurvedTextLayer* layer, const char* text);
 
 #define SUN_POINTS 16
 #define SUN_SMALL_POINTS 8
+#define SPACE_TIME -100
 typedef struct PlanetLayer
 {
     Layer* layer;
@@ -133,7 +135,6 @@ typedef enum StateChanges
     STATE_PLANETSTATS = 1 << 5,
     STATE_PERSONALEFFECTS = 1 << 6,
     STATE_ENVEFFECTS = 1 << 7,
-
 } StateChanges;
 typedef enum PlayerFlags
 {
@@ -141,6 +142,17 @@ typedef enum PlayerFlags
     PLAYER_IN_SPACESHIP = 1 << 1,
     PLAYER_IS_LANDED = 1 << 2
 } PlayerFlags;
+typedef enum BodyType
+{
+    BODY_UNKNOWN = 0,
+    BODY_STAR,
+    BODY_PLANET,
+    BODY_MOON,
+    BODY_SATELLITE,
+    BODY_ASTEROIDBELT,
+    BODY_STATION,
+    BODY_SHIP
+} BodyType;
 typedef struct GameState
 {
     uint8_t
@@ -150,6 +162,7 @@ typedef struct GameState
         planetGrav,
         planetOxygen;
     int16_t planetTemperature;
+    BodyType bodyType;
     PlayerFlags playerFlags;
     EffectIcon personalEffects[MAX_PERSONALEFFECTS];
     EffectIcon envEffects[MAX_ENVEFFECTS];
@@ -201,8 +214,8 @@ void main_window_push(MainWindow* window);
 typedef struct ScanWindow
 {
     Window* window;
-    TextLayer* bodyName;
     TextLayer* locationName;
+    TextLayer* bodyType;
     TextLayer* temperature;
     TextLayer* oxygen;
     TextLayer* gravity;

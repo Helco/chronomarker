@@ -454,13 +454,20 @@ void prv_curved_text_draw(Layer* layerPbl, GContext* ctx)
 // ------------------------------------------------------------------------------------------------
 
 static GBitmap* s_planetBitmap, *s_planetSmallBitmap;
+static GBitmap* s_starsBigBitmap, *s_starsSmallBitmap;
 
 void planet_create(PlanetLayer* layer, bool big, Layer* parentLayer)
 {
     if (big && s_planetBitmap == NULL)
+    {
         s_planetBitmap = gbitmap_create_with_resource(RESOURCE_ID_PLANET);
+        s_starsBigBitmap = gbitmap_create_with_resource(RESOURCE_ID_STARS_BIG);
+    }
     if (!big && s_planetSmallBitmap == NULL)
+    {
         s_planetSmallBitmap = gbitmap_create_with_resource(RESOURCE_ID_PLANET_SMALL);
+        s_starsSmallBitmap = gbitmap_create_with_resource(RESOURCE_ID_STARS_SMALL);
+    }
     const int layerRadius = big ? 50 : 21;
     const GRect bounds = big
         ? GRectCenteredCircle(layerRadius)
@@ -486,8 +493,14 @@ void planet_destroy(PlanetLayer* layer)
 
 void planet_set_time(PlanetLayer* layer, int time)
 {
-    ASSERT(time >= 0 && time < (1 << BITS_TIME));
+    ASSERT((time >= 0 && time < (1 << BITS_TIME)) || time == SPACE_TIME);
     if (layer->lastTime == time) return;
+    if (time == SPACE_TIME)
+    {
+        layer->lastTime = SPACE_TIME;
+        layer_mark_dirty(layer->layer);
+        return;
+    }
 
     // The sun highlight has two strips of vertices, one going on the planet edge and one going across
     // the one going across is an oval stretched horizontally based on the time phase
@@ -541,18 +554,31 @@ void prv_planet_draw(Layer* layerPbl, GContext* ctx)
 {
     PlanetLayer* layer = *(PlanetLayer**)layer_get_data(layerPbl);
     graphics_context_set_antialiased(ctx, false);
-    if (!layer->big) // there is a white background for the small planet :(
+    GBitmap* bitmap;
+    if (layer->big) // there is a white background for the small planet :(
+    {
+        graphics_context_set_compositing_mode(ctx, GCompOpSet);
+        bitmap = layer->lastTime == SPACE_TIME ? s_starsBigBitmap : s_planetBitmap;
+    }
+    else
     {
         graphics_context_set_compositing_mode(ctx, GCompOpAssign);
-        graphics_context_set_fill_color(ctx, GColorBlack);
-        graphics_fill_circle(ctx, GPoint(21, 21), 20);
+        if (layer->lastTime == SPACE_TIME)
+            bitmap = s_starsSmallBitmap;
+        else
+        {
+            graphics_context_set_fill_color(ctx, GColorBlack);
+            graphics_fill_circle(ctx, GPoint(21, 21), 20);
+            graphics_context_set_compositing_mode(ctx, GCompOpSet);
+            bitmap = s_planetSmallBitmap;
+        }
     }
 
-    graphics_context_set_fill_color(ctx, layer->big ? GColorLightGray : GColorWhite);
-    gpath_draw_filled(ctx, &layer->path);
-
-    GBitmap* bitmap = layer->big ? s_planetBitmap : s_planetSmallBitmap;
-    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    if (layer->lastTime != SPACE_TIME)
+    {
+        graphics_context_set_fill_color(ctx, layer->big ? GColorLightGray : GColorWhite);
+        gpath_draw_filled(ctx, &layer->path);
+    }
     graphics_draw_bitmap_in_rect(ctx, bitmap, gbitmap_get_bounds(bitmap));
 }
 

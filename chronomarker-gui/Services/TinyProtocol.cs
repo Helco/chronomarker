@@ -65,6 +65,17 @@ internal class UShortBitStream
     }
 }
 
+public enum BodyType
+{
+    Unknown = 0,
+    Star,
+    Planet,
+    Moon,
+    Satellite,
+    AsteroidBelt,
+    Station
+}
+
 internal class TinyProtocol
 {
     private const int CurrentVersion = 0;
@@ -78,6 +89,7 @@ internal class TinyProtocol
     private const int GravityBits = 8; // divided by 100
     private const int OxygenBits = 7;
     private const int TemperatureBits = 11; // shifted by absolute zero point
+    private const int BodyTypeBits = 3;
     private const int PlayerFlagBits = 3;
     private const int PlanetNameCountBits = 4;
     private const int LocationNameCountBits = 5;
@@ -175,6 +187,9 @@ internal class TinyProtocol
         _ => null
     };
 
+    public static BodyType BodyTypeFromInt(uint bodyType) =>
+        (bodyType > 6 ? BodyType.Unknown : (BodyType)bodyType);
+
     [Flags]
     private enum PlayerFlags
     {
@@ -196,7 +211,7 @@ internal class TinyProtocol
         o2, co2,
         heading,
         localTime,
-        planetGravity, planetTemp, planetOxygen,
+        planetGravity, planetTemp, planetOxygen, bodyType,
         playerFlags;
     private string planetName = "", locationName = "";
     private readonly List<PersonalEffectType> personalEffects = new(5);
@@ -223,12 +238,12 @@ internal class TinyProtocol
                 case LocalEnvironmentMessage msg:
                     QueuePlanetName(msg.sBodyName, true);
                     QueueLocationName(msg.sLocationName, true);
-                    QueuePlanetStats(msg.fGravity, msg.fTemperature, msg.fOxygenPercent, true);
                     QueuePlayerFlags(default(PlayerFlags) |
                         (msg.bInSpaceship ? PlayerFlags.IsInSpaceship : default) |
                         (msg.bIsScanning ? PlayerFlags.IsScanning : default) |
                         (msg.bIsLanded ? PlayerFlags.IsLanded : default),
                         true);
+                    QueuePlanetStats(msg.fGravity, msg.fTemperature, msg.fOxygenPercent, msg.uBodyType, true);
                     break;
                 case LocalEnvFrequentMessage msg:
                     QueueLocalTime(msg.fLocalPlanetTime, true);
@@ -369,21 +384,26 @@ internal class TinyProtocol
     private int BitClamp(float value, int bits) =>
         Math.Clamp((int)(value + 0.5f), 0, (1 << bits) - 1);
 
-    private void QueuePlanetStats(float gravity, float temperature, float oxygen, bool doCheck)
+    private void QueuePlanetStats(float gravity, float temperature, float oxygen, uint bodyType, bool doCheck)
     {
         int gravityI = BitClamp(gravity * 100f, GravityBits);
         int temperatureI = BitClamp(temperature - TemperatureZero, TemperatureBits);
         int oxygenI = BitClamp(oxygen, OxygenBits);
-        if (doCheck && planetGravity == gravityI && planetTemp == temperatureI && planetOxygen == oxygenI)
+        int bodyTypeI = (int)BodyTypeFromInt(bodyType);
+        if ((playerFlags & (int)PlayerFlags.IsInSpaceship) != 0 && (playerFlags & (int)PlayerFlags.IsLanded) == 0)
+            bodyTypeI = 7;
+        if (doCheck && planetGravity == gravityI && planetTemp == temperatureI && planetOxygen == oxygenI && bodyTypeI == this.bodyType)
             return;
         planetGravity = gravityI;
         planetTemp = temperatureI;
         planetOxygen = oxygenI;
+        this.bodyType = bodyTypeI;
         AddMessage(ProviderMessage.PlanetStats, () =>
         {
             bitStream.Write(gravityI, GravityBits);
             bitStream.Write(temperatureI, TemperatureBits);
             bitStream.Write(oxygenI, OxygenBits);
+            bitStream.Write(bodyTypeI, BodyTypeBits);
         });
     }
 

@@ -47,6 +47,7 @@ internal class StatusModel : ViewModelBase
     public float Gravity { get; private set; }
     public float Oxygen { get; private set; }
     public float Temperature { get; private set; }
+    public BodyType BodyType { get; private set; }
     public string BodyName { get; private set; } = "";
     public string LocationName { get; private set; } = "";
     public float LocalTime { get; private set; }
@@ -84,12 +85,13 @@ internal class StatusModel : ViewModelBase
                 Gravity = msg.fGravity;
                 Oxygen = msg.fOxygenPercent;
                 Temperature = msg.fTemperature;
+                BodyType = TinyProtocol.BodyTypeFromInt(msg.uBodyType);
                 IsInSpaceship = msg.bInSpaceship;
                 IsScanning = msg.bIsScanning;
                 IsLanded = msg.bIsLanded;
                 Raise(
                     nameof(BodyName), nameof(LocationName),
-                    nameof(Gravity), nameof(Oxygen), nameof(Temperature),
+                    nameof(Gravity), nameof(Oxygen), nameof(Temperature), nameof(BodyType),
                     nameof(IsInSpaceship), nameof(IsScanning), nameof(IsLanded));
                 break;
 

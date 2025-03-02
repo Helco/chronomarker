@@ -30,6 +30,16 @@
         },
         {
           "type": "bitmap",
+          "name": "STARS_BIG",
+          "file": "images/stars-big.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "STARS_SMALL",
+          "file": "images/stars-small.png"
+        },
+        {
+          "type": "bitmap",
           "name": "CO2",
           "file": "images/co2.png"
         },
