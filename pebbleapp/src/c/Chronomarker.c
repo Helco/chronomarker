@@ -29,7 +29,16 @@ void app_handle_gamealert(const GameAlert* alert)
 void app_handle_gamestate(StateChanges changes)
 {
   Window* topWindow = window_stack_get_top_window();
-  if (topWindow == app.main.window)
+  Window* supposedWindow = game.playerFlags & PLAYER_IS_SCANNING
+    ? app.scan.window : app.main.window;
+  if (topWindow != supposedWindow)
+  {
+    if (topWindow != app.main.window)
+      window_stack_pop(true);
+    else
+      window_stack_push(supposedWindow, true);
+  }
+  else if (topWindow == app.main.window)
     main_window_handle_gamestate(&app.main, changes);
   else if (topWindow == app.scan.window)
     scan_window_handle_gamestate(&app.scan, changes);
@@ -41,7 +50,6 @@ static void prv_init(void) {
   communication_init();
 
   main_window_push(&app.main);
-  scan_window_push(&app.scan);
 }
 
 static void prv_deinit(void) {

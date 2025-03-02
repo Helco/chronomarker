@@ -138,9 +138,9 @@ typedef enum StateChanges
 } StateChanges;
 typedef enum PlayerFlags
 {
-    PLAYER_IS_SCANNING= 1 << 0,
-    PLAYER_IN_SPACESHIP = 1 << 1,
-    PLAYER_IS_LANDED = 1 << 2
+    PLAYER_IN_SPACESHIP = 1 << 0,
+    PLAYER_IS_LANDED = 1 << 1,
+    PLAYER_IS_SCANNING= 1 << 2,
 } PlayerFlags;
 typedef enum BodyType
 {
