@@ -12,7 +12,7 @@ namespace Chronomarker;
 
 public partial class App : Application
 {
-    public const bool MockGame = false;
+    public const bool MockGame = true;
 
     public override void Initialize()
     {

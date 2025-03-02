@@ -101,6 +101,8 @@ static void prv_o2co2_draw(struct Layer *layerPbl, GContext* ctx)
     gpath_draw_filled(ctx, &layer->co2Path);
 }
 
+// ------------------------------------------------------------------------------------------------
+
 static GBitmap *s_iconsFull, *s_icons[EFFECT_ICON_COUNT];
 static GBitmap *s_iconTri = NULL;
 
@@ -228,6 +230,8 @@ static void prv_effect_icon_draw(Layer* layer, GContext* ctx)
     gbitmap_get_palette(s_iconsFull)[1] = s_iconFgColors[icon - 1];
     graphics_draw_bitmap_in_rect(ctx, s_icons[icon - 1], iconBounds);
 }
+
+// ------------------------------------------------------------------------------------------------
 
 #define CURVED_CHAR_SIZE 10
 #define CURVED_CHAR_GSIZE GSize(CURVED_CHAR_SIZE, CURVED_CHAR_SIZE)
@@ -426,6 +430,8 @@ void prv_curved_text_draw(Layer* layerPbl, GContext* ctx)
             graphics_draw_bitmap_in_rect(ctx, layer->charBitmaps[i], layer->charBounds[i]);
     }
 }
+
+// ------------------------------------------------------------------------------------------------
 
 static GBitmap* s_planetBitmap;
 

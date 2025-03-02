@@ -53,6 +53,8 @@ bool bitstream_hasAtLeast(const BitStream* stream, int bits)
   return bitstream_remaining(stream) >= bits;
 }
 
+// ------------------------------------------------------------------------------------------------
+
 #define BITS_PACKETTYPE 5
 typedef enum PacketType
 {
@@ -162,6 +164,8 @@ StateChanges handle_packet(const uint8_t* data, const int size)
   }
   return changes;
 }
+
+// ------------------------------------------------------------------------------------------------
 
 char *translate_error(AppMessageResult result) {
   switch (result) {

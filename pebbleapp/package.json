@@ -46,6 +46,18 @@
           "file": "images/font-8.png",
           "memoryFormat": "8Bit",
           "storageFormat": "pbi"
+        },
+        {
+          "type": "font",
+          "name": "PROFONTWINDOWS_18",
+          "file": "fonts/ProFontWindows.ttf",
+          "characterRegex": "[ -~°]"
+        },
+        {
+          "type": "font",
+          "name": "PROFONTWINDOWS_16",
+          "file": "fonts/ProFontWindows.ttf",
+          "characterRegex": "[ -~]"
         }
       ]
     }

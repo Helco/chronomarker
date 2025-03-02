@@ -2,13 +2,24 @@
 
 typedef struct App
 {
-    Window* window;
-    PlanetLayer planet;
-    O2CO2Layer o2co2;
-    EffectIconLayer effectIcons[5 + 4];
+  MainWindow main;
+  ScanWindow scan;
 } App;
 App app;
-GameState game;
+GameState game = {
+  .o2 = 50,
+  .co2 = 13,
+  .personalEffects = { 0, 0, 0, 0, 0},
+  .envEffects = { 0, 0, 0, 0 },
+  .heading = 0,
+  .time = 40,
+  .playerFlags = 0,
+  .bodyName = "PROCYON III",
+  .locationName = "PLANET",
+  .planetTemperature = -222,
+  .planetOxygen = 21,
+  .planetGrav = 107
+};
 
 void app_handle_gamealert(const GameAlert* alert)
 {
@@ -17,68 +28,31 @@ void app_handle_gamealert(const GameAlert* alert)
 
 void app_handle_gamestate(StateChanges changes)
 {
-  if (changes & STATE_O2CO2)
-    o2co2_set_values(&app.o2co2, game.o2, game.co2);
-  if (changes & STATE_TIME)
-    planet_set_time(&app.planet, game.time);
-  if (changes & STATE_PERSONALEFFECTS)
-  {
-    for (int i = 0; i < MAX_PERSONALEFFECTS; i++)
-      effect_icon_set_icon(app.effectIcons + i, game.personalEffects[i]);
-  }
-  if (changes & STATE_ENVEFFECTS)
-  {
-    for (int i = 0; i < MAX_ENVEFFECTS; i++)
-      effect_icon_set_icon(app.effectIcons + 5 + i, game.envEffects[i]);
-  }
-}
-
-static void prv_window_load(Window *window) {
-  Layer *window_layer = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(window_layer);
-  window_set_background_color(window, GColorBlack);
-
-  planet_create(&app.planet, window_layer);
-  planet_set_time(&app.planet, 20);
-  o2co2_create(&app.o2co2, window_layer);
-  o2co2_set_values(&app.o2co2, 22, 42);
-  //curved_text_create(&s_bodyName, window_layer);
-  //curved_text_set_text(&s_bodyName, "TRITON");
-
-  for (int i = 0; i < 5 + 4; i++)
-  {
-    effect_icon_create(app.effectIcons + i, window_layer, i);
-  }
-}
-
-static void prv_window_unload(Window *window) {
-  planet_destroy(&app.planet);
-  o2co2_destroy(&app.o2co2);
-  //curved_text_destroy(&s_bodyName);
-  for (int i = 0; i < 5 + 4; i++)
-    effect_icon_destroy(app.effectIcons + i);
+  Window* topWindow = window_stack_get_top_window();
+  if (topWindow == app.main.window)
+    main_window_handle_gamestate(&app.main, changes);
+  else if (topWindow == app.scan.window)
+    scan_window_handle_gamestate(&app.scan, changes);
 }
 
 static void prv_init(void) {
-  app.window = window_create();
-  window_set_window_handlers(app.window, (WindowHandlers) {
-    .load = prv_window_load,
-    .unload = prv_window_unload,
-  });
-  const bool animated = true;
-  window_stack_push(app.window, animated);
-
+  main_window_create(&app.main);
+  scan_window_create(&app.scan);
   communication_init();
+
+  ///main_window_push(&app.main);
+  scan_window_push(&app.scan);
 }
 
 static void prv_deinit(void) {
-  window_destroy(app.window);
+  main_window_destroy(&app.main);
+  scan_window_destroy(&app.scan);
 }
 
 int main(void) {
   prv_init();
 
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing, pushed window: %p", app.window);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Done initializing");
 
   app_event_loop();
   prv_deinit();

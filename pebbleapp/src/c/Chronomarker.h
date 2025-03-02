@@ -154,5 +154,36 @@ typedef struct GameAlert
 extern GameState game;
 void communication_init();
 
+typedef struct MainWindow
+{
+    Window* window;
+    PlanetLayer planet;
+    O2CO2Layer o2co2;
+    EffectIconLayer effectIcons[5 + 4];
+} MainWindow;
+void main_window_create(MainWindow* window);
+void main_window_destroy(MainWindow* window);
+void main_window_handle_gamestate(MainWindow* window, StateChanges changes);
+void main_window_push(MainWindow* window);
+
+#define SCAN_BUFFER_SIZE 8
+typedef struct ScanWindow
+{
+    Window* window;
+    TextLayer* bodyName;
+    TextLayer* locationName;
+    TextLayer* temperature;
+    TextLayer* oxygen;
+    TextLayer* gravity;
+    TextLayer* legend;
+    char temperatureBuffer[SCAN_BUFFER_SIZE];
+    char oxygenBuffer[SCAN_BUFFER_SIZE];
+    char gravityBuffer[SCAN_BUFFER_SIZE];
+} ScanWindow;
+void scan_window_create(ScanWindow* scan);
+void scan_window_destroy(ScanWindow* scan);
+void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes);
+void scan_window_push(ScanWindow* scan);
+
 void app_handle_gamestate(StateChanges changes);
 void app_handle_gamealert(const GameAlert* alert);

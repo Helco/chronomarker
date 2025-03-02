@@ -373,7 +373,7 @@ internal class TinyProtocol
     {
         int gravityI = BitClamp(gravity * 100f, GravityBits);
         int temperatureI = BitClamp(temperature - TemperatureZero, TemperatureBits);
-        int oxygenI = BitClamp(oxygen * 100f, OxygenBits);
+        int oxygenI = BitClamp(oxygen, OxygenBits);
         if (doCheck && planetGravity == gravityI && planetTemp == temperatureI && planetOxygen == oxygenI)
             return;
         planetGravity = gravityI;
