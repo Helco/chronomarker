@@ -124,7 +124,7 @@ static void prv_o2co2_draw(struct Layer *layerPbl, GContext* ctx)
 // ------------------------------------------------------------------------------------------------
 
 static GBitmap *s_iconsFull, *s_icons[EFFECT_ICON_COUNT];
-static GBitmap *s_iconTri = NULL;
+static GBitmap *s_iconTri = NULL, *s_iconTriBig = NULL;
 
 static const GPoint s_iconPositionSlots[] =
 {
@@ -172,13 +172,13 @@ static const GColor s_iconFgColors[] =
     {GColorWhiteARGB8},
     {GColorWhiteARGB8},
     {GColorWhiteARGB8},
-    {GColorLightGrayARGB8},
+    {GColorDarkGrayARGB8},
     {GColorWhiteARGB8},
 
     {GColorWhiteARGB8},
     {GColorWhiteARGB8},
     {GColorWhiteARGB8},
-    {GColorLightGrayARGB8},
+    {GColorDarkGrayARGB8},
 
     {GColorWhiteARGB8},
 };
@@ -188,6 +188,7 @@ void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int position
     if (s_iconTri == NULL)
     {
         s_iconTri = gbitmap_create_with_resource(RESOURCE_ID_ICON_TRI);
+        s_iconTriBig = gbitmap_create_with_resource(RESOURCE_ID_ICON_TRI_BIG);
         s_iconsFull = gbitmap_create_with_resource(RESOURCE_ID_ICONS);
         GRect sub = GRect(0, 0, 13, 13);
         for (int i = 0; i < EFFECT_ICON_COUNT; i++)
@@ -198,10 +199,23 @@ void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int position
     }
 
     ASSERT(positionSlot >= 0 && positionSlot < (int)(sizeof(s_iconPositionSlots) / sizeof(GPoint)));
+    layer->big = false;
+    layer->icon = EFFECT_ICON_NONE;
     layer->layer = layer_create_with_data(
         (GRect) { .origin = s_iconPositionSlots[positionSlot], .size = GSize(22, 22) },
-        sizeof(EffectIcon));
-    *(EffectIcon*)layer_get_data(layer->layer) = EFFECT_ICON_NONE;
+        sizeof(EffectIconLayer*));
+    *(EffectIconLayer**)layer_get_data(layer->layer) = layer;
+    layer_set_hidden(layer->layer, true);
+    layer_set_update_proc(layer->layer, prv_effect_icon_draw);
+    layer_add_child(parentLayer, layer->layer);
+}
+
+void effect_icon_create_big(EffectIconLayer* layer, Layer* parentLayer)
+{
+    layer->big = true;
+    layer->icon = EFFECT_ICON_NONE;
+    layer->layer = layer_create_with_data(GRect(75, 8, 30, 30), sizeof(EffectIconLayer*));
+    *(EffectIconLayer**)layer_get_data(layer->layer) = layer;
     layer_set_hidden(layer->layer, true);
     layer_set_update_proc(layer->layer, prv_effect_icon_draw);
     layer_add_child(parentLayer, layer->layer);
@@ -214,31 +228,39 @@ void effect_icon_destroy(EffectIconLayer* layer)
 
 void effect_icon_set_icon(EffectIconLayer* layer, EffectIcon newIcon)
 {
-    EffectIcon* oldIconPtr = (EffectIcon*)layer_get_data(layer->layer);
-    if (*oldIconPtr == newIcon)
+    if (layer->icon == newIcon)
         return;
-    *oldIconPtr = newIcon;
+    layer->icon = newIcon;
     layer_set_hidden(layer->layer, newIcon == EFFECT_ICON_NONE);
     layer_mark_dirty(layer->layer);
 }
 
-static void prv_effect_icon_draw(Layer* layer, GContext* ctx)
+static void prv_effect_icon_draw(Layer* layerPbl, GContext* ctx)
 {
-    EffectIcon icon = *(EffectIcon*)layer_get_data(layer);
-    if (icon == EFFECT_ICON_NONE)
+    EffectIconLayer* layer = *(EffectIconLayer**)layer_get_data(layerPbl);
+    if (layer->icon == EFFECT_ICON_NONE)
         return;
-    const bool isPersonal = icon < EFFECT_ICON_FIRST_ENVIRONMENTAL;
+    const bool isPersonal = layer->icon < EFFECT_ICON_FIRST_ENVIRONMENTAL;
     const GColor bgColor = 
-        icon == EFFECT_ICON_HEALING ? s_iconHealingColor
-        : s_iconBgColors[(icon - 1) % 5];
-    const GRect bounds = layer_get_bounds(layer);
+        layer->icon == EFFECT_ICON_HEALING ? s_iconHealingColor
+        : s_iconBgColors[(layer->icon - 1) % 5];
+    const GRect bounds = layer_get_bounds(layer->layer);
 
     graphics_context_set_antialiased(ctx, false);
     graphics_context_set_compositing_mode(ctx, GCompOpSet);
     if (isPersonal)
     {
-        gbitmap_get_palette(s_iconTri)[1] = bgColor;
-        graphics_draw_bitmap_in_rect(ctx, s_iconTri, bounds);
+        GBitmap* icon = layer->big ? s_iconTriBig : s_iconTri;
+        gbitmap_get_palette(icon)[layer->big ? 3 : 0] = bgColor;
+        graphics_draw_bitmap_in_rect(ctx, icon, bounds);
+    }
+    else if (layer->big)
+    {
+        graphics_context_set_fill_color(ctx, bgColor);
+        graphics_context_set_stroke_color(ctx, GColorBlack);
+        graphics_context_set_stroke_width(ctx, 1);
+        graphics_fill_circle(ctx, GPoint(15, 15), 14);
+        graphics_draw_circle(ctx, GPoint(15, 15), 12);
     }
     else
     {
@@ -246,9 +268,14 @@ static void prv_effect_icon_draw(Layer* layer, GContext* ctx)
         graphics_fill_circle(ctx, GPoint(10, 10), 10);
     }
 
-    GRect iconBounds = { .origin = s_iconOffsets[icon - 1], .size = GSize(13, 13) };
-    gbitmap_get_palette(s_iconsFull)[1] = s_iconFgColors[icon - 1];
-    graphics_draw_bitmap_in_rect(ctx, s_icons[icon - 1], iconBounds);
+    GRect iconBounds = { .origin = s_iconOffsets[layer->icon - 1], .size = GSize(13, 13) };
+    if (layer->big)
+    {
+        iconBounds.origin.x += 4;
+        iconBounds.origin.y += 6;
+    }
+    gbitmap_get_palette(s_iconsFull)[1] = s_iconFgColors[layer->icon - 1];
+    graphics_draw_bitmap_in_rect(ctx, s_icons[layer->icon - 1], iconBounds);
 }
 
 // ------------------------------------------------------------------------------------------------

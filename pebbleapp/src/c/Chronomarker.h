@@ -69,8 +69,11 @@ typedef enum EffectIcon
 typedef struct EffectIconLayer
 {
     Layer* layer;
+    EffectIcon icon;
+    bool big;
 } EffectIconLayer;
 void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int positionSlot);
+void effect_icon_create_big(EffectIconLayer* layer, Layer* parentLayer);
 void effect_icon_destroy(EffectIconLayer* layer);
 void effect_icon_set_icon(EffectIconLayer* layer, EffectIcon icon);
 
@@ -170,23 +173,9 @@ typedef struct GameState
     char locationName[MAX_LOCNAME_LENGTH + 1];
 
 } GameState;
-typedef enum GameAlertKind
-{
-    GAMEALERT_NONE = 0,
-    GAMEALERT_RADIATION,
-    GAMEALERT_THERMAL,
-    GAMEALERT_AIRBORNE,
-    GAMEALERT_CORROSIVE,
-    GAMEALERT_CARDIO,
-    GAMEALERT_SKELETAL,
-    GAMEALERT_NERVOUS,
-    GAMEALERT_DIGESTIVE,
-    GAMEALERT_MISC,
-    GAMEALERT_RESTORE
-} GameAlertKind;
 typedef struct GameAlert
 {
-    GameAlertKind kind;
+    EffectIcon icon;
     bool positive;
     char title[MAX_ALERTTEXT_LENGTH + 1];
     char subtitle[MAX_ALERTTEXT_LENGTH + 1];
@@ -202,10 +191,14 @@ typedef struct MainWindow
     PlanetLayer planet;
     O2CO2Layer o2co2;
     EffectIconLayer effectIcons[5 + 4];
+    EffectIconLayer alertIcon;
+    TextLayer* alertBackground;
+    TextLayer* alertText;
 } MainWindow;
 void main_window_create(MainWindow* window);
 void main_window_destroy(MainWindow* window);
 void main_window_handle_gamestate(MainWindow* window, StateChanges changes);
+void main_window_handle_alert(MainWindow* window, const GameAlert* alert);
 void main_window_push(MainWindow* window);
 
 // ------------------------------------------------------------------------------------------------

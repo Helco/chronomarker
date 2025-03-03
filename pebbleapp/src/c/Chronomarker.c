@@ -23,7 +23,7 @@ GameState game = {
 
 void app_handle_gamealert(const GameAlert* alert)
 {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert %d: %d, %d", alert->kind, alert->title, alert->subtitle);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert %d: %d, %d", alert->icon, alert->title, alert->subtitle);
 }
 
 void app_handle_gamestate(StateChanges changes)
@@ -44,12 +44,19 @@ void app_handle_gamestate(StateChanges changes)
     scan_window_handle_gamestate(&app.scan, changes);
 }
 
+static const GameAlert alert =
+{
+  .icon = EFFECT_ICON_RADIATION,
+  .title = "BROKEN BONES"
+};
+
 static void prv_init(void) {
   main_window_create(&app.main);
   scan_window_create(&app.scan);
   communication_init();
 
   main_window_push(&app.main);
+  main_window_handle_alert(&app.main, &alert);
 }
 
 static void prv_deinit(void) {

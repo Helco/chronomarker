@@ -57,6 +57,12 @@
         },
         {
           "type": "bitmap",
+          "name": "ICON_TRI_BIG",
+          "file": "images/iconTriBig.png",
+          "memoryFormat": "2BitPalette"
+        },
+        {
+          "type": "bitmap",
           "name": "FONT_8",
           "file": "images/font-8.png",
           "memoryFormat": "8Bit",

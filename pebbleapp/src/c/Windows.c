@@ -1,7 +1,15 @@
 #include "Chronomarker.h"
 
+static GFont s_profontwindows_big, s_profontwindows_small;
+
 static void prv_main_window_load(Window* window)
 {
+    if (s_profontwindows_big == NULL)
+    {
+        s_profontwindows_big = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_18));
+        s_profontwindows_small = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_16));
+    }
+
     MainWindow* m = (MainWindow*)window_get_user_data(window);
     window_set_background_color(window, GColorBlack);
     Layer *window_layer = window_get_root_layer(window);
@@ -15,6 +23,18 @@ static void prv_main_window_load(Window* window)
     {
         effect_icon_create(m->effectIcons + i, window_layer, i);
     }
+
+    effect_icon_create_big(&m->alertIcon, window_layer);
+    m->alertBackground = text_layer_create(GRect(0, 46, 180, 44));
+    text_layer_set_background_color(m->alertBackground, GColorLightGray);
+    layer_add_child(window_layer, text_layer_get_layer(m->alertBackground));
+    m->alertText = text_layer_create(GRect(0, 56, 180, 20));
+    text_layer_set_background_color(m->alertText, GColorClear);
+    text_layer_set_text_color(m->alertText, GColorBlack);
+    text_layer_set_text_alignment(m->alertText, GTextAlignmentCenter);
+    text_layer_set_font(m->alertText, s_profontwindows_big);
+    layer_add_child(window_layer, text_layer_get_layer(m->alertText));
+    main_window_handle_alert(m, NULL);
 }
 
 static void prv_main_window_unload(Window* window)
@@ -25,6 +45,9 @@ static void prv_main_window_unload(Window* window)
     //curved_text_destroy(&s_bodyName);
     for (int i = 0; i < 5 + 4; i++)
         effect_icon_destroy(m->effectIcons + i);
+    effect_icon_destroy(&m->alertIcon);
+    text_layer_destroy(m->alertBackground);
+    text_layer_destroy(m->alertText);
 }
 
 static void prv_main_window_appear(Window* window)
@@ -67,6 +90,24 @@ void main_window_handle_gamestate(MainWindow* m, StateChanges changes)
     }
 }
 
+void main_window_handle_alert(MainWindow* m, const GameAlert* alert)
+{
+    if (alert == NULL)
+    {
+        effect_icon_set_icon(&m->alertIcon, EFFECT_ICON_NONE);
+        text_layer_set_text(m->alertText, "");
+    }
+    else
+    {
+        effect_icon_set_icon(&m->alertIcon, alert->icon);
+        text_layer_set_text(m->alertText, alert->title);
+    }
+    layer_set_hidden(text_layer_get_layer(m->alertBackground), alert == NULL);
+    layer_set_hidden(text_layer_get_layer(m->alertText), alert == NULL);
+    for (int i = 0; i < 9; i++)
+        layer_set_hidden(m->effectIcons[i].layer, alert != NULL);
+}
+
 void main_window_push(MainWindow* m)
 {
     window_stack_push(m->window, true);
@@ -74,16 +115,8 @@ void main_window_push(MainWindow* m)
 
 // ------------------------------------------------------------------------------------------------
 
-static GFont s_profontwindows_big, s_profontwindows_small;
-
 static void prv_scan_window_load(Window* window)
 {
-    if (s_profontwindows_big == NULL)
-    {
-        s_profontwindows_big = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_18));
-        s_profontwindows_small = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_16));
-    }
-
     ScanWindow* scan = (ScanWindow*)window_get_user_data(window);
     window_set_background_color(window, GColorBlack);
     Layer *window_layer = window_get_root_layer(window);

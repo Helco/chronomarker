@@ -153,7 +153,7 @@ StateChanges handle_packet(const uint8_t* data, const int size)
       {
         GameAlert alert;
         alert.positive = type == PACKET_POSALERT;
-        alert.kind = bitstream_read(&stream, BITS_ALERTKIND);
+        alert.icon = bitstream_read(&stream, BITS_ALERTKIND);
         bitstream_readString(&stream, BITS_ALERTTEXT, alert.title);
         bitstream_readString(&stream, BITS_ALERTTEXT, alert.subtitle);
         app_handle_gamealert(&alert);
