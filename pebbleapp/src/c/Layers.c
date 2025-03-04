@@ -156,7 +156,7 @@ static const GPoint s_iconOffsets[] =
     {5, 5},
     {5, 5},
 
-    {6, 6}
+    {6, 4}
 };
 
 static const GColor s_iconBgColors[] =
