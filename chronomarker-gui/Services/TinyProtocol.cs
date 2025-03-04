@@ -445,7 +445,7 @@ internal class TinyProtocol
 
     private void AddMessage(ProviderMessage message, Action writeMessage)
     {
-        if (message is not ProviderMessage.NegativeAlert or ProviderMessage.PositiveAlert)
+        if (message is not ProviderMessage.NegativeAlert and not ProviderMessage.PositiveAlert)
         {
             int previousI = queuedMessages.FindIndex(t => t.type == message);
             if (previousI >= 0)

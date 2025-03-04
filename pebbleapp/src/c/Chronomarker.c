@@ -33,6 +33,7 @@ static void prv_app_next_gamealert()
 
 static void prv_app_finish_gamealert(void* data)
 {
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Remove alert");
   main_window_handle_alert(&app.main, NULL);
   alert_window_handle_alert(&app.alert, NULL);
   app.curAlertTimer = NULL;
