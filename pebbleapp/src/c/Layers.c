@@ -6,6 +6,7 @@ static void prv_curved_text_draw(struct Layer *layer, GContext* ctx);
 static void prv_planet_draw(struct Layer* layer, GContext* ctx);
 static void prv_scan_decoration_crescent_draw(struct Layer* layer, GContext* ctx);
 static void prv_scan_decoration_center_draw(struct Layer* layer, GContext* ctx);
+static void prv_alert_background_draw(struct Layer* layer, GContext* ctx);
 
 static GPoint s_innerPoints[COUNT_O2CO2]; // anti-clockwise
 static GPoint s_outerPoints[COUNT_O2CO2]; // clock-wise
@@ -210,13 +211,14 @@ void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int position
     layer_add_child(parentLayer, layer->layer);
 }
 
-void effect_icon_create_big(EffectIconLayer* layer, Layer* parentLayer)
+void effect_icon_create_big(EffectIconLayer* layer, Layer* parentLayer, bool down)
 {
     layer->big = true;
     layer->icon = EFFECT_ICON_NONE;
-    layer->layer = layer_create_with_data(GRect(75, 8, 30, 30), sizeof(EffectIconLayer*));
+    layer->layer = layer_create_with_data(GRect(75, 8 + down * 12, 30, 30), sizeof(EffectIconLayer*));
     *(EffectIconLayer**)layer_get_data(layer->layer) = layer;
     layer_set_hidden(layer->layer, true);
+    layer_set_clips(layer->layer, false);
     layer_set_update_proc(layer->layer, prv_effect_icon_draw);
     layer_add_child(parentLayer, layer->layer);
 }
@@ -261,6 +263,9 @@ static void prv_effect_icon_draw(Layer* layerPbl, GContext* ctx)
         graphics_context_set_stroke_width(ctx, 1);
         graphics_fill_circle(ctx, GPoint(15, 15), 14);
         graphics_draw_circle(ctx, GPoint(15, 15), 12);
+        graphics_context_set_stroke_width(ctx, 1);
+        graphics_draw_circle(ctx, GPoint(15, 15), 15);
+        graphics_draw_circle(ctx, GPoint(15, 15), 16);
     }
     else
     {
@@ -675,10 +680,87 @@ static void prv_scan_decoration_crescent_draw(struct Layer* layer, GContext* ctx
     graphics_context_set_antialiased(ctx, false);
     graphics_context_set_fill_color(ctx, GColorLightGray);
     gpath_draw_filled(ctx, path);
-    //return;
+    
     graphics_context_set_fill_color(ctx, GColorBlack);
     if (path->points == s_scanTopPoints)
         graphics_fill_rect(ctx, GRect(0, 31, 180, 3), 0, 0);
     else
         graphics_fill_rect(ctx, GRect(0, 3, 180, 3), 0, 0);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void alert_background_create(AlertBackgroundLayer* layer, Layer* parentLayer)
+{
+    layer->layer = layer_create_with_data(GRect(0, 0, 180, 180), sizeof(GColor));
+    layer_set_update_proc(layer->layer, prv_alert_background_draw);
+    layer_add_child(parentLayer, layer->layer);
+}
+
+void alert_background_destroy(AlertBackgroundLayer* layer)
+{
+    layer_destroy(layer->layer);
+}
+
+void alert_background_set_color(AlertBackgroundLayer* layer, GColor color)
+{
+    *(GColor*)layer_get_data(layer->layer) = color;
+    layer_mark_dirty(layer->layer);
+}
+
+static void prv_alert_background_draw(Layer* layer, GContext* ctx)
+{
+    const GColor color = *(GColor*)layer_get_data(layer);
+    graphics_context_set_antialiased(ctx, false);
+    graphics_context_set_fill_color(ctx, color);
+    graphics_context_set_stroke_color(ctx, color);
+    graphics_context_set_stroke_width(ctx, 3);
+    graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+    graphics_draw_circle(ctx, GPoint(90, 90), 89);
+    graphics_draw_line(ctx, GPoint(12, 63), GPoint(168, 63));
+    graphics_draw_line(ctx, GPoint(12, 118), GPoint(168, 118));
+
+    const int XOffset = 6; // but from the circular framebuffer edges
+    const int YOffset = 7;
+    const int Height = 52;
+    const int StartOffset = 18;
+    const int OnWidth = 13;
+    const int OffWidth = 18; // surely no coincidence that OnWidth + OffWidth == 32 == 2^5 right?
+    GBitmap* framebuffer = graphics_capture_frame_buffer(ctx);
+    for (int y = 0; y < Height; y++)
+    {
+        // I am going to assume that pixel 90 is always valid and that the framebuffer is symmetric
+        GBitmapDataRowInfo upper = gbitmap_get_data_row_info(framebuffer, YOffset + y);
+        GBitmapDataRowInfo lower = gbitmap_get_data_row_info(framebuffer, 180 - YOffset - y);
+        int lineOffset = (StartOffset + y) & 31;
+        int max_x = upper.max_x - 90;
+        max_x -= XOffset;
+        for (int x = 0; ; x += OnWidth + OffWidth)
+        {
+            int minX = x - lineOffset, maxX = minX + OnWidth;
+            if (minX < 0)
+            {
+                //maxX += minX - 0;
+                minX = 0;
+            }
+            if (maxX < 0)
+                continue;
+            if (minX > max_x)
+                break;
+            if (maxX > max_x)
+                maxX = max_x;
+            int width = maxX - minX + 1;
+            memset(upper.data + 90 - maxX, color.argb, width);
+            memset(upper.data + 90 + minX, color.argb, width);
+            memset(lower.data + 90 - maxX, color.argb, width);
+            memset(lower.data + 90 + minX, color.argb, width);
+            
+        }        
+    }
+    graphics_release_frame_buffer(ctx, framebuffer);
+
+    // yes I knwow this can be done much more efficient, I don't have the time for it
+    graphics_context_set_stroke_color(ctx, GColorBlack);
+    graphics_context_set_stroke_width(ctx, 2);
+    graphics_draw_circle(ctx, GPoint(90, 90), 85);
 }

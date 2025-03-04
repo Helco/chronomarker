@@ -1,11 +1,6 @@
 #include "Chronomarker.h"
 
-typedef struct App
-{
-  MainWindow main;
-  ScanWindow scan;
-} App;
-App app;
+static App app;
 GameState game = {
   .o2 = 50,
   .co2 = 13,
@@ -47,21 +42,25 @@ void app_handle_gamestate(StateChanges changes)
 static const GameAlert alert =
 {
   .icon = EFFECT_ICON_RADIATION,
-  .title = "BROKEN BONES"
+  .title = "BROKEN BONES",
+  .subtitle = "GAS VENT"
 };
 
 static void prv_init(void) {
   main_window_create(&app.main);
   scan_window_create(&app.scan);
+  alert_window_create(&app.alert);
   communication_init();
 
-  main_window_push(&app.main);
+  window_stack_push(app.main.window, false);
   main_window_handle_alert(&app.main, &alert);
+  alert_window_push(&app.alert, &alert);
 }
 
 static void prv_deinit(void) {
   main_window_destroy(&app.main);
   scan_window_destroy(&app.scan);
+  alert_window_destroy(&app.alert);
 }
 
 int main(void) {

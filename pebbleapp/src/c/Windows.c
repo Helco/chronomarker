@@ -24,7 +24,7 @@ static void prv_main_window_load(Window* window)
         effect_icon_create(m->effectIcons + i, window_layer, i);
     }
 
-    effect_icon_create_big(&m->alertIcon, window_layer);
+    effect_icon_create_big(&m->alertIcon, window_layer, false);
     m->alertBackground = text_layer_create(GRect(0, 46, 180, 44));
     text_layer_set_background_color(m->alertBackground, GColorLightGray);
     layer_add_child(window_layer, text_layer_get_layer(m->alertBackground));
@@ -106,11 +106,6 @@ void main_window_handle_alert(MainWindow* m, const GameAlert* alert)
     layer_set_hidden(text_layer_get_layer(m->alertText), alert == NULL);
     for (int i = 0; i < 9; i++)
         layer_set_hidden(m->effectIcons[i].layer, alert != NULL);
-}
-
-void main_window_push(MainWindow* m)
-{
-    window_stack_push(m->window, true);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -249,7 +244,72 @@ void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes)
     }
 }
 
-void scan_window_push(ScanWindow* scan)
+// ------------------------------------------------------------------------------------------------
+
+static void prv_alert_window_load(Window* window)
 {
-    window_stack_push(scan->window, true);
+    AlertWindow* aw = (AlertWindow*)window_get_user_data(window);
+    window_set_background_color(window, GColorBlack);
+    Layer* window_layer = window_get_root_layer(window);
+
+    alert_background_create(&aw->background, window_layer);
+    effect_icon_create_big(&aw->icon, window_layer, true);
+
+    aw->title = text_layer_create(GRect(0, 66, 180, 20));
+    text_layer_set_background_color(aw->title, GColorClear);
+    text_layer_set_text_color(aw->title, GColorBlack);
+    text_layer_set_text_alignment(aw->title, GTextAlignmentCenter);
+    text_layer_set_font(aw->title, s_profontwindows_big);
+    layer_add_child(window_layer, text_layer_get_layer(aw->title));
+
+    aw->subtitle = text_layer_create(GRect(0, 90, 180, 20));
+    text_layer_set_background_color(aw->subtitle, GColorClear);
+    text_layer_set_text_color(aw->subtitle, GColorBlack);
+    text_layer_set_text_alignment(aw->subtitle, GTextAlignmentCenter);
+    text_layer_set_font(aw->subtitle, s_profontwindows_big);
+    layer_add_child(window_layer, text_layer_get_layer(aw->subtitle));
+}
+
+static void prv_alert_window_unload(Window* window)
+{
+    AlertWindow* aw = (AlertWindow*)window_get_user_data(window);
+    alert_background_destroy(&aw->background);
+    effect_icon_destroy(&aw->icon);
+    text_layer_destroy(aw->title);
+    text_layer_destroy(aw->subtitle);
+    aw->alert = NULL;
+}
+
+static void prv_alert_window_appear(Window* window)
+{
+    AlertWindow* aw = (AlertWindow*)window_get_user_data(window);
+    ASSERT(aw->alert != NULL);
+    alert_background_set_color(&aw->background, aw->alert->positive ? GColorGreen : GColorRed);
+    effect_icon_set_icon(&aw->icon, aw->alert->icon);
+    text_layer_set_text(aw->title, aw->alert->title);
+    text_layer_set_text_color(aw->title, aw->alert->positive ? GColorGreen : GColorRed);
+    text_layer_set_text(aw->subtitle, aw->alert->subtitle);
+    text_layer_set_text_color(aw->subtitle, aw->alert->positive ? GColorGreen : GColorRed);
+}
+
+void alert_window_push(AlertWindow* aw, const GameAlert* alert)
+{
+    aw->alert = alert;
+    window_stack_push(aw->window, true);
+}
+
+void alert_window_create(AlertWindow* aw)
+{
+    aw->window = window_create();
+    window_set_user_data(aw->window, aw);
+    window_set_window_handlers(aw->window, (WindowHandlers) {
+        .load = prv_alert_window_load,
+        .unload = prv_alert_window_unload,
+        .appear = prv_alert_window_appear
+    });
+}
+
+void alert_window_destroy(AlertWindow* aw)
+{
+    window_destroy(aw->window);
 }

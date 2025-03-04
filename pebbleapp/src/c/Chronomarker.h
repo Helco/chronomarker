@@ -73,7 +73,7 @@ typedef struct EffectIconLayer
     bool big;
 } EffectIconLayer;
 void effect_icon_create(EffectIconLayer* layer, Layer* parentLayer, int positionSlot);
-void effect_icon_create_big(EffectIconLayer* layer, Layer* parentLayer);
+void effect_icon_create_big(EffectIconLayer* layer, Layer* parentLayer, bool bioAlert);
 void effect_icon_destroy(EffectIconLayer* layer);
 void effect_icon_set_icon(EffectIconLayer* layer, EffectIcon icon);
 
@@ -125,6 +125,17 @@ typedef struct ScanDecorationLayer
 
 void scan_decoration_create(ScanDecorationLayer* layer, Layer* parentLayer);
 void scan_decoration_destroy(ScanDecorationLayer* layer);
+
+// ------------------------------------------------------------------------------------------------
+
+typedef struct AlertBackgroundLayer
+{
+    Layer* layer;
+} AlertBackgroundLayer;
+
+void alert_background_create(AlertBackgroundLayer* layer, Layer* parentLayer);
+void alert_background_destroy(AlertBackgroundLayer* layer);
+void alert_background_set_color(AlertBackgroundLayer* layer, GColor color);
 
 // ------------------------------------------------------------------------------------------------
 
@@ -199,7 +210,6 @@ void main_window_create(MainWindow* window);
 void main_window_destroy(MainWindow* window);
 void main_window_handle_gamestate(MainWindow* window, StateChanges changes);
 void main_window_handle_alert(MainWindow* window, const GameAlert* alert);
-void main_window_push(MainWindow* window);
 
 // ------------------------------------------------------------------------------------------------
 
@@ -223,9 +233,29 @@ typedef struct ScanWindow
 void scan_window_create(ScanWindow* scan);
 void scan_window_destroy(ScanWindow* scan);
 void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes);
-void scan_window_push(ScanWindow* scan);
 
 // ------------------------------------------------------------------------------------------------
 
+typedef struct AlertWindow
+{
+    Window* window;
+    TextLayer* title;
+    TextLayer* subtitle;
+    EffectIconLayer icon;
+    AlertBackgroundLayer background;
+    const GameAlert* alert;
+} AlertWindow;
+void alert_window_create(AlertWindow* aw);
+void alert_window_destroy(AlertWindow* aw);
+void alert_window_push(AlertWindow* aw, const GameAlert* alert);
+
+// ------------------------------------------------------------------------------------------------
+
+typedef struct App
+{
+  MainWindow main;
+  ScanWindow scan;
+  AlertWindow alert;
+} App;
 void app_handle_gamestate(StateChanges changes);
 void app_handle_gamealert(const GameAlert* alert);
