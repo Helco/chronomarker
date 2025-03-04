@@ -160,15 +160,15 @@ internal class TinyProtocol
     public enum AlertIcon
     {
         None,
-        Radiation,
-        Thermal,
-        Airborne,
-        Corrosive,
         Cardio,
         Skeletal,
         Nervous,
         Digestive,
         Misc,
+        Radiation,
+        Thermal,
+        Airborne,
+        Corrosive,
         Restore
     }
     public static AlertIcon? AlertIconFromName(string iconName) => iconName.Replace("_Positive", "").Replace("_Negative", "") switch

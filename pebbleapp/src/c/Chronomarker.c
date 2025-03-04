@@ -13,12 +13,52 @@ GameState game = {
   .locationName = "PLANET",
   .planetTemperature = -222,
   .planetOxygen = 21,
-  .planetGrav = 107
+  .planetGrav = 107,
 };
+
+static void prv_app_finish_gamealert(void* data);
+
+static void prv_app_next_gamealert()
+{
+  ASSERT(app.alertCount > 0);
+  ASSERT(app.curAlertTimer == NULL);
+  app.curAlertTimer = app_timer_register(ALERT_TIMEOUT, prv_app_finish_gamealert, NULL);
+  const GameAlert* curAlert = app.alerts + app.curAlertI;
+  if (curAlert->icon >= EFFECT_ICON_FIRST_ENVIRONMENTAL)
+    alert_window_handle_alert(&app.alert, curAlert);
+  else
+    main_window_handle_alert(&app.main, curAlert);
+  //vibes_long_pulse();
+}
+
+static void prv_app_finish_gamealert(void* data)
+{
+  main_window_handle_alert(&app.main, NULL);
+  alert_window_handle_alert(&app.alert, NULL);
+  app.curAlertTimer = NULL;
+  if (app.alertCount > 0)
+  {
+    app.alertCount--;
+    app.curAlertI = (app.curAlertI + 1) % MAX_ALERTS;
+  }
+  if (app.alertCount > 0)
+    prv_app_next_gamealert();
+}
 
 void app_handle_gamealert(const GameAlert* alert)
 {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert %d: %d, %d", alert->icon, alert->title, alert->subtitle);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert %d: %s, %s", alert->icon, alert->title, alert->subtitle);
+  if (app.alertCount >= MAX_ALERTS)
+  {
+    // I just guess this does not happen
+    APP_LOG(APP_LOG_LEVEL_WARNING, "Too many alerts, dropping...");
+    return;
+  }
+  int i = (app.curAlertI + app.alertCount) % MAX_ALERTS;
+  memcpy(app.alerts + i, alert, sizeof(GameAlert));
+  app.alertCount++;
+  if (app.curAlertTimer == NULL)
+    prv_app_next_gamealert();
 }
 
 void app_handle_gamestate(StateChanges changes)
@@ -39,22 +79,16 @@ void app_handle_gamestate(StateChanges changes)
     scan_window_handle_gamestate(&app.scan, changes);
 }
 
-static const GameAlert alert =
-{
-  .icon = EFFECT_ICON_RADIATION,
-  .title = "BROKEN BONES",
-  .subtitle = "GAS VENT"
-};
-
 static void prv_init(void) {
+  memset(&app, 0, sizeof(app));
+
   main_window_create(&app.main);
   scan_window_create(&app.scan);
   alert_window_create(&app.alert);
-  communication_init();
 
   window_stack_push(app.main.window, false);
-  main_window_handle_alert(&app.main, &alert);
-  alert_window_push(&app.alert, &alert);
+
+  communication_init();
 }
 
 static void prv_deinit(void) {

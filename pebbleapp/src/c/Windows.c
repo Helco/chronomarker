@@ -292,10 +292,15 @@ static void prv_alert_window_appear(Window* window)
     text_layer_set_text_color(aw->subtitle, aw->alert->positive ? GColorGreen : GColorRed);
 }
 
-void alert_window_push(AlertWindow* aw, const GameAlert* alert)
+void alert_window_handle_alert(AlertWindow* aw, const GameAlert* alert)
 {
-    aw->alert = alert;
-    window_stack_push(aw->window, true);
+    if (alert == NULL && window_stack_get_top_window() == aw->window)
+        window_stack_pop(true);
+    else if (alert != NULL)
+    {
+        aw->alert = alert;
+        window_stack_push(aw->window, true);
+    }
 }
 
 void alert_window_create(AlertWindow* aw)

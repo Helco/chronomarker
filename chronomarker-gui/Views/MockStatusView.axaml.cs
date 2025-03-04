@@ -242,5 +242,44 @@ namespace Chronomarker.Views
                     .ToArray()
             });
         }
+
+        private void SendPersonalAlert(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            gameService.SendMessage(new AlertsMessage()
+            {
+                aAlerts = [ new() {
+                    bIsPositive = false,
+                    sEffectIcon = "PersonalEffect_NervousSystem",
+                    sAlertText = "BROKEN BONES",
+                    sAlertSubText = ""
+                } ]
+            });
+        }
+
+        private void SendPosEnvironmentalAlert(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            gameService.SendMessage(new AlertsMessage()
+            {
+                aAlerts = [ new() {
+                    bIsPositive = true,
+                    sEffectIcon = "HazardEffect_RestoreSoak",
+                    sAlertText = "RESTORING",
+                    sAlertSubText = "GOOD STUFF"
+                } ]
+            });
+        }
+
+        private void SendNegEnvironmentalAlert(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            gameService.SendMessage(new AlertsMessage()
+            {
+                aAlerts = [ new() {
+                    bIsPositive = false,
+                    sEffectIcon = "HazardEffect_Airborne",
+                    sAlertText = "AIRBORNE",
+                    sAlertSubText = "GAS VENT"
+                } ]
+            });
+        }
     }
 }

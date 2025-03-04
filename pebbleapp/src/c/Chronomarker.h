@@ -61,7 +61,7 @@ typedef enum EffectIcon
     EFFECT_ICON_AIRBORNE,
     EFFECT_ICON_CORROSIVE,
     EFFECT_ICON_HEALING,
-
+    
     EFFECT_ICON_COUNT = EFFECT_ICON_HEALING - 1,
     EFFECT_ICON_FIRST_PERSONAL = EFFECT_ICON_CARDIO,
     EFFECT_ICON_FIRST_ENVIRONMENTAL = EFFECT_ICON_RADIATION
@@ -247,15 +247,20 @@ typedef struct AlertWindow
 } AlertWindow;
 void alert_window_create(AlertWindow* aw);
 void alert_window_destroy(AlertWindow* aw);
-void alert_window_push(AlertWindow* aw, const GameAlert* alert);
+void alert_window_handle_alert(AlertWindow* aw, const GameAlert* alert);
 
 // ------------------------------------------------------------------------------------------------
 
+#define MAX_ALERTS 4
+#define ALERT_TIMEOUT 3500
 typedef struct App
 {
   MainWindow main;
   ScanWindow scan;
   AlertWindow alert;
+  GameAlert alerts[MAX_ALERTS];
+  int curAlertI, alertCount;
+  AppTimer* curAlertTimer;
 } App;
 void app_handle_gamestate(StateChanges changes);
 void app_handle_gamealert(const GameAlert* alert);

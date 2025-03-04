@@ -131,21 +131,11 @@
 
     <Separator/>
     <TextBlock Text="Alerts:" HorizontalAlignment="Left" FontWeight="Bold"/>
-    <ScrollViewer Height="120">
-    <ItemsControl  ItemsSource="{Binding Alerts}"  >
-      <ItemsControl.ItemTemplate>
-        <DataTemplate>
-          <Border BorderBrush="{Binding Border}" BorderThickness="2" Padding="5" CornerRadius="5" Margin="0, 0, 0, 10">
-            <Grid ColumnDefinitions="Auto, *" RowDefinitions="Auto, Auto">
-              <TextBlock Text="{Binding EffectIcon}" FontWeight="Bold" Grid.RowSpan="2" VerticalAlignment="Center" Margin="5,0,20,0"/>
-              <TextBlock Text="{Binding AlertText}" FontWeight="SemiBold" Grid.Column="1"/>
-              <TextBlock Text="{Binding AlertSubText}" Grid.Column="1" Grid.Row="1"/>
-            </Grid>
-          </Border>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
-    </ScrollViewer>
+    <Grid ColumnDefinitions="1*,2*,2*" RowDefinitions="*">
+      <Button Content="Personal" Grid.Column="0" Click="SendPersonalAlert"/>
+      <Button Content="Pos. Environmental" Grid.Column="1" Click="SendPosEnvironmentalAlert"/>
+      <Button Content="Neg. Environmental" Grid.Column="2" Click="SendNegEnvironmentalAlert"/>
+    </Grid>
   </StackPanel>
   </Border>
 </UserControl>

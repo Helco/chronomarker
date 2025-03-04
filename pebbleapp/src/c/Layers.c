@@ -253,7 +253,7 @@ static void prv_effect_icon_draw(Layer* layerPbl, GContext* ctx)
     if (isPersonal)
     {
         GBitmap* icon = layer->big ? s_iconTriBig : s_iconTri;
-        gbitmap_get_palette(icon)[layer->big ? 3 : 0] = bgColor;
+        gbitmap_get_palette(icon)[layer->big ? 3 : 1] = bgColor;
         graphics_draw_bitmap_in_rect(ctx, icon, bounds);
     }
     else if (layer->big)
