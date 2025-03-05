@@ -47,6 +47,8 @@ public class BluetoothClassicTransport : ITransport
 
     public async Task ConnectAsync(CancellationToken ct)
     {
+        var timeoutCt = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCt.CancelAfter(TimeSpan.FromSeconds(30));
         var tcs = new TaskCompletionSource<string>();
         var watcher = DeviceInformation.CreateWatcher(
             "(System.ItemNameDisplay:~<\"Pebble\")",
@@ -54,7 +56,7 @@ public class BluetoothClassicTransport : ITransport
         watcher.Added += (watcher, deviceInfo) => tcs.TrySetResult(deviceInfo.Id);
         watcher.EnumerationCompleted += (watcher, _) => tcs.TrySetException(new IOException("Could not find Pebble"));
         watcher.Start();
-        var deviceId = await tcs.Task.WaitAsync(ct);
+        var deviceId = await tcs.Task.WaitAsync(timeoutCt.Token);
         watcher.Stop();
 
         var accessInfo = DeviceAccessInformation.CreateFromId(deviceId);
@@ -63,22 +65,28 @@ public class BluetoothClassicTransport : ITransport
 
         BluetoothDevice? device = null;
         StreamSocket? socket = null;
+        timeoutCt = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCt.CancelAfter(TimeSpan.FromSeconds(20));
         try
         {
-            device = await BluetoothDevice.FromIdAsync(deviceId).AsTask(ct);
-            var services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.SerialPort).AsTask(ct);
+            device = await BluetoothDevice.FromIdAsync(deviceId).AsTask(timeoutCt.Token);
+            var services = await device.GetRfcommServicesForIdAsync(RfcommServiceId.SerialPort).AsTask(timeoutCt.Token);
             if (services.Error != BluetoothError.Success || services.Services.Count == 0)
                 throw new IOException("Could not get serial access: " + services.Error.ToString());
             var service = services.Services[0];
 
             socket = new StreamSocket();
-            await socket.ConnectAsync(service.ConnectionHostName, service.ConnectionServiceName).AsTask(ct);
+            await socket.ConnectAsync(service.ConnectionHostName, service.ConnectionServiceName).AsTask(timeoutCt.Token);
             connection = new(device, socket, new(socket.OutputStream));
         }
         catch
         {
+            var deviceName = device?.Name;
+            if (string.IsNullOrWhiteSpace(deviceName))
+                deviceName = device is null ? "unknown Pebble" : $"Pebble {device.BluetoothAddress:X8}";
             socket?.Dispose();
             device?.Dispose();
+            throw new IOException($"Could not connect to paired {deviceName}");
         }
     }
 

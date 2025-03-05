@@ -19,6 +19,7 @@ internal enum WatchType
 {
     LPV6,
     PebbleDevConnection,
+    PebbleBLClassic,
 
 #if DEBUG
     DebugTinyProtocol

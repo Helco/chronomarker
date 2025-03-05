@@ -9,5 +9,9 @@ namespace Chronomarker.Views
             InitializeComponent();
             
         }
+
+        private void ComboBox_SelectionChanged(object? sender, Avalonia.Controls.SelectionChangedEventArgs e)
+        {
+        }
     }
 }

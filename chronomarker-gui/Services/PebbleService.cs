@@ -1,13 +1,27 @@
 ﻿using System;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
-using NetPebble.Protocol;
+using NetPebble.Transports;
 
 namespace Chronomarker.Services;
 
-internal class PebbleService : IWatchService
+internal sealed class PebbleDevConnectionService(
+    LogService logService, IGameService gameService, Uri address
+    ) : PebbleService(logService, gameService)
+{
+    protected override ITransport CreateTransport() =>
+        new WebsocketTransport(address);
+}
+
+internal sealed class PebbleBLClassicService(
+    LogService logService, IGameService gameService
+    ) : PebbleService(logService, gameService)
+{
+    protected override ITransport CreateTransport() =>
+        new BluetoothClassicTransport();
+}
+
+internal abstract class PebbleService : IWatchService
 {
     private class Connection : IDisposable, InfrequentPacketScheduler.IAdapter
     {
@@ -148,11 +162,14 @@ internal class PebbleService : IWatchService
         public ConnectionException(string? message, Exception? innerException) : base(message, innerException) { }
     }
 
+    protected abstract NetPebble.Transports.ITransport CreateTransport();
+
     private async Task<Connection> Connect()
     {
         try
         {
-            var transport = new NetPebble.Transports.WebsocketTransport("ws://127.0.0.1:33327");
+            var transport = CreateTransport();
+            //var transport = new NetPebble.Transports.WebsocketTransport("ws://127.0.0.1:33327");
             //var transport = new NetPebble.Transports.WebsocketTransport("ws://192.168.178.89:9000");
             //var transport = new NetPebble.Transports.BluetoothClassicTransport();
             await transport.ConnectAsync(default);
@@ -240,7 +257,13 @@ internal class PebbleService : IWatchService
                 Status = WatchStatus.Watching;
                 Status = WatchStatus.Connecting;
                 logMessage("Connecting...");
-                var connection = currentConnection = await Connect();
+                Connection? connection;
+                try { connection = currentConnection = await Connect(); }
+                catch (ConnectionException ex)
+                {
+                    logService.Log("Connection failed: " + ex.Message);
+                    continue;
+                }
                 Status = WatchStatus.Connected;
                 logMessage("Connected");
                 token.Register(connection.Cancellation.Cancel);
