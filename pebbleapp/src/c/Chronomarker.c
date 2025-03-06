@@ -1,6 +1,6 @@
 #include "Chronomarker.h"
 
-static App app;
+App app;
 GameState game = {
   .o2 = 50,
   .co2 = 13,
@@ -83,16 +83,19 @@ void app_handle_gamestate(StateChanges changes)
 static void prv_init(void) {
   memset(&app, 0, sizeof(app));
 
+  app_status_window_create(&app.status);
   main_window_create(&app.main);
   scan_window_create(&app.scan);
   alert_window_create(&app.alert);
 
-  window_stack_push(app.main.window, false);
+  window_stack_push(app.status.window, false);
+  app_status_set_status(&app.status, true, false);
 
   communication_init();
 }
 
 static void prv_deinit(void) {
+  app_status_window_destroy(&app.status);
   main_window_destroy(&app.main);
   scan_window_destroy(&app.scan);
   alert_window_destroy(&app.alert);

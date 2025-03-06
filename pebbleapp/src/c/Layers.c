@@ -7,6 +7,7 @@ static void prv_planet_draw(struct Layer* layer, GContext* ctx);
 static void prv_scan_decoration_crescent_draw(struct Layer* layer, GContext* ctx);
 static void prv_scan_decoration_center_draw(struct Layer* layer, GContext* ctx);
 static void prv_alert_background_draw(struct Layer* layer, GContext* ctx);
+static void prv_app_status_draw(struct Layer* layer, GContext* ctx);
 
 static GPoint s_innerPoints[COUNT_O2CO2]; // anti-clockwise
 static GPoint s_outerPoints[COUNT_O2CO2]; // clock-wise
@@ -763,4 +764,42 @@ static void prv_alert_background_draw(Layer* layer, GContext* ctx)
     graphics_context_set_stroke_color(ctx, GColorBlack);
     graphics_context_set_stroke_width(ctx, 2);
     graphics_draw_circle(ctx, GPoint(90, 90), 85);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+static GBitmap *s_statusIcons, *s_statusBLYes, *s_statusBLNo, *s_statusGameYes, *s_statusGameNo;
+
+void app_status_create(AppStatusLayer* layer, Layer* parentLayer)
+{
+    if (s_statusIcons == NULL)
+    {
+        s_statusIcons = gbitmap_create_with_resource(RESOURCE_ID_STATUS_ICONS);
+        s_statusBLYes = gbitmap_create_as_sub_bitmap(s_statusIcons, GRect(0, 0, 32, 32));
+        s_statusBLNo = gbitmap_create_as_sub_bitmap(s_statusIcons, GRect(32, 0, 32, 32));
+        s_statusGameYes = gbitmap_create_as_sub_bitmap(s_statusIcons, GRect(0, 32, 32, 32));
+        s_statusGameNo = gbitmap_create_as_sub_bitmap(s_statusIcons, GRect(32, 32, 32, 32));
+    }
+
+    layer->layer = layer_create_with_data(GRect(41, 27, 98, 44), sizeof(AppStatusLayer*));
+    *(AppStatusLayer**)layer_get_data(layer->layer) = layer;
+    layer_set_update_proc(layer->layer, prv_app_status_draw);
+    layer_add_child(parentLayer, layer->layer);
+}
+
+void app_status_destroy(AppStatusLayer* layer)
+{
+    layer_destroy(layer->layer);
+}
+
+static void prv_app_status_draw(Layer* layerPbl, GContext* ctx)
+{
+    AppStatusLayer* layer = *(AppStatusLayer**)layer_get_data(layerPbl);
+    graphics_context_set_antialiased(ctx, false);
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+    graphics_context_set_fill_color(ctx, GColorLightGray);
+    graphics_fill_rect(ctx, GRect(0, 0, 44, 44), 8, GCornersAll);
+    graphics_fill_rect(ctx, GRect(54, 0, 44, 44), 8, GCornersAll);
+    graphics_draw_bitmap_in_rect(ctx, layer->bluetooth ? s_statusBLYes : s_statusBLNo, GRect(6, 6, 32, 32));
+    graphics_draw_bitmap_in_rect(ctx, layer->game ? s_statusGameYes : s_statusGameNo, GRect(60, 6, 32, 32));
 }

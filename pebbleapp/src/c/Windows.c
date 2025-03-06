@@ -4,12 +4,6 @@ static GFont s_profontwindows_big, s_profontwindows_small;
 
 static void prv_main_window_load(Window* window)
 {
-    if (s_profontwindows_big == NULL)
-    {
-        s_profontwindows_big = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_18));
-        s_profontwindows_small = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_16));
-    }
-
     MainWindow* m = (MainWindow*)window_get_user_data(window);
     window_set_background_color(window, GColorBlack);
     Layer *window_layer = window_get_root_layer(window);
@@ -317,4 +311,68 @@ void alert_window_create(AlertWindow* aw)
 void alert_window_destroy(AlertWindow* aw)
 {
     window_destroy(aw->window);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+static void prv_app_status_window_load(Window* window)
+{
+    if (s_profontwindows_big == NULL)
+    {
+        s_profontwindows_big = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_18));
+        s_profontwindows_small = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_PROFONTWINDOWS_16));
+    }
+    
+    AppStatusWindow* asw = (AppStatusWindow*)window_get_user_data(window);
+    Layer* window_layer = window_get_root_layer(window);
+    window_set_background_color(window, GColorWhite);
+
+    app_status_create(&asw->status, window_layer);
+    asw->text = text_layer_create(GRect(0, 76, 180, 100));
+    text_layer_set_background_color(asw->text, GColorClear);
+    text_layer_set_text_color(asw->text, GColorBlack);
+    text_layer_set_text_alignment(asw->text, GTextAlignmentCenter);
+    text_layer_set_font(asw->text, s_profontwindows_big);
+    text_layer_set_text(asw->text, "fuckyou");
+    layer_add_child(window_layer, text_layer_get_layer(asw->text));
+    //text_layer_enable_screen_text_flow_and_paging(asw->text, 4);
+}
+
+static void prv_app_status_window_unload(Window* window)
+{
+    AppStatusWindow* asw = (AppStatusWindow*)window_get_user_data(window);
+    app_status_destroy(&asw->status);
+    text_layer_destroy(asw->text);
+}
+
+static void prv_app_status_window_appear(Window* window)
+{
+    AppStatusWindow* asw = (AppStatusWindow*)window_get_user_data(window);
+    app_status_set_status(asw, bluetooth_connection_service_peek(), app.hasActiveComm);
+}
+
+void app_status_window_create(AppStatusWindow* asw)
+{
+    asw->window = window_create();
+    window_set_user_data(asw->window, asw);
+    window_set_window_handlers(asw->window, (WindowHandlers) {
+        .load = prv_app_status_window_load,
+        .unload = prv_app_status_window_unload,
+        .appear = prv_app_status_window_appear
+    });
+}
+
+void app_status_window_destroy(AppStatusWindow* asw)
+{
+    window_destroy(asw->window);
+}
+
+void app_status_set_status(AppStatusWindow* asw, bool bluetooth, bool game)
+{
+    asw->status.bluetooth = bluetooth;
+    asw->status.game = game;
+    layer_mark_dirty(asw->status.layer);
+    snprintf(asw->textBuffer, STATUS_BUFFER_SIZE, "Bluetooth:%s\nGame:%s\nVer.:1.0", 
+        bluetooth ? "Yes" : "No", game ? "Yes" : "No");
+    text_layer_set_text(asw->text, asw->textBuffer);
 }

@@ -79,6 +79,11 @@
           "name": "PROFONTWINDOWS_16",
           "file": "fonts/ProFontWindows.ttf",
           "characterRegex": "[ -~]"
+        },
+        {
+          "type": "bitmap",
+          "name": "STATUS_ICONS",
+          "file": "images/status.png"
         }
       ]
     }

@@ -139,6 +139,17 @@ void alert_background_set_color(AlertBackgroundLayer* layer, GColor color);
 
 // ------------------------------------------------------------------------------------------------
 
+typedef struct AppStatusLayer
+{
+    Layer* layer;
+    bool bluetooth;
+    bool game;
+} AppStatusLayer;
+void app_status_create(AppStatusLayer* layer, Layer* parentLayer);
+void app_status_destroy(AppStatusLayer* layer);
+
+// ------------------------------------------------------------------------------------------------
+
 typedef enum StateChanges
 {
     STATE_O2CO2 = 1 << 0,
@@ -251,16 +262,35 @@ void alert_window_handle_alert(AlertWindow* aw, const GameAlert* alert);
 
 // ------------------------------------------------------------------------------------------------
 
+#define STATUS_BUFFER_SIZE 64
+typedef struct AppStatusWindow
+{
+    Window* window;
+    AppStatusLayer status;
+    TextLayer* text;
+    char textBuffer[STATUS_BUFFER_SIZE];
+    bool hadBluetooth, hadActiveComm;
+} AppStatusWindow;
+void app_status_window_create(AppStatusWindow* asw);
+void app_status_window_destroy(AppStatusWindow* asw);
+void app_status_set_status(AppStatusWindow* asw, bool bluetooth, bool game);
+
+// ------------------------------------------------------------------------------------------------
+
 #define MAX_ALERTS 4
 #define ALERT_TIMEOUT 3500
 typedef struct App
 {
-  MainWindow main;
-  ScanWindow scan;
-  AlertWindow alert;
-  GameAlert alerts[MAX_ALERTS];
-  int curAlertI, alertCount;
-  AppTimer* curAlertTimer;
+    MainWindow main;
+    ScanWindow scan;
+    AlertWindow alert;
+    AppStatusWindow status;
+    GameAlert alerts[MAX_ALERTS];
+    int curAlertI, alertCount;
+    AppTimer* curAlertTimer;
+    AppTimer* timeoutTimer;
+    bool hasActiveComm;
 } App;
+extern App app;
 void app_handle_gamestate(StateChanges changes);
 void app_handle_gamealert(const GameAlert* alert);
