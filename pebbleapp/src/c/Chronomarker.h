@@ -279,6 +279,7 @@ void app_status_set_status(AppStatusWindow* asw, bool bluetooth, bool game);
 
 #define MAX_ALERTS 4
 #define ALERT_TIMEOUT 3500
+#define COMM_TIMEOUT 15000
 typedef struct App
 {
     MainWindow main;

@@ -16,9 +16,10 @@ internal class InfrequentPacketScheduler : IDisposable
         bool HasPendingMessages { get; }
         void FlushPendingMessages();
         void QueueEverything();
-        Task SendPacket(byte[] packet);
+        Task SendPacket(byte[] packet, CancellationToken ct);
     }
 
+    private static readonly TimeSpan LatencyDelay = TimeSpan.FromSeconds(0.01);
     private static readonly TimeSpan MinDelay = TimeSpan.FromSeconds(0.06);
     private static readonly TimeSpan MaxDelay = TimeSpan.FromSeconds(0.33);
     private const int ResetQueuedPackets = 5;
@@ -76,11 +77,19 @@ internal class InfrequentPacketScheduler : IDisposable
     private async Task SendLoop()
     {
         bool isFastBurst = false;
+        var lastCycle = stopwatch.Elapsed;
         while (!cancellation.IsCancellationRequested)
         {
             var curDelay = stopwatch.Elapsed - lastMessage;
-            if (!isFastBurst && curDelay < MinDelay)
-                await Task.Delay(MinDelay - curDelay);
+            var curCycle = stopwatch.Elapsed - lastCycle;
+            lastCycle = stopwatch.Elapsed;
+            if (!isFastBurst)
+            {
+                if (curDelay < MinDelay)
+                    await Task.Delay(MinDelay - curDelay);
+                if (curCycle < LatencyDelay)
+                    await Task.Delay(LatencyDelay);
+            }
             if (curDelay > MaxDelay)
                 adapter.FlushPendingMessages();
             await semaphore.WaitAsync();
@@ -94,12 +103,16 @@ internal class InfrequentPacketScheduler : IDisposable
                 if (queuedPackets.Any())
                 {
                     lastMessage = stopwatch.Elapsed;
-                    await adapter.SendPacket(queuedPackets.Dequeue());
+                    var packet = queuedPackets.Dequeue();
+                    await adapter.SendPacket(packet, cancellation.Token);
                 }
-                else if (isFastBurst)
+                else
                 {
-                    isFastBurst = false;
-                    logService.Log("Burst is over");
+                    if (isFastBurst)
+                    {
+                        isFastBurst = false;
+                        logService.Log("Burst is over");
+                    }
                 }
             }
             catch(Exception e)

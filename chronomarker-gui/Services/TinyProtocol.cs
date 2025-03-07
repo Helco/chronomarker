@@ -296,15 +296,27 @@ internal class TinyProtocol
         }
     }
 
-    public void FlushPendingMessages()
+    public bool FlushPendingMessages()
     {
         lock (mutex)
         {
             if (bitStream.ByteSize == 0)
-                return;
+                return false;
             queuePacket(bitStream.Data);
             bitStream.Clear();
             queuedMessages.Clear();
+            return true;
+        }
+    }
+
+    public void Heartbeat()
+    {
+        lock (mutex)
+        {
+            bitStream.Clear();
+            AddMessage(ProviderMessage.Nop, () => { });
+            queuePacket(bitStream.Data);
+            ReconstructPacket();
         }
     }
 
@@ -318,8 +330,8 @@ internal class TinyProtocol
             QueueInteger(ProviderMessage.O2, o2, ref o2, O2CO2Bits, false);
             QueueInteger(ProviderMessage.CO2, co2, ref co2, O2CO2Bits, false);
             QueueInteger(ProviderMessage.Heading, heading, ref heading, HeadingBits, false);
-            QueueInteger(ProviderMessage.Heading, playerFlags, ref playerFlags, PlayerFlagBits, false);
-            QueueInteger(ProviderMessage.Heading, localTime, ref localTime, LocalTimeBits, false);
+            QueueInteger(ProviderMessage.PlayerFlags, playerFlags, ref playerFlags, PlayerFlagBits, false);
+            QueueInteger(ProviderMessage.LocalTime, localTime, ref localTime, LocalTimeBits, false);
             QueuePlanetName(planetName, false);
             QueueLocationName(locationName, false);
             AddMessage(ProviderMessage.PlanetStats, () =>
@@ -327,6 +339,7 @@ internal class TinyProtocol
                 bitStream.Write(planetGravity, GravityBits);
                 bitStream.Write(planetTemp, TemperatureBits);
                 bitStream.Write(planetOxygen, OxygenBits);
+                bitStream.Write(bodyType, BodyTypeBits);
             });
             FlushPendingMessages();
         }

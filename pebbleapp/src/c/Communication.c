@@ -209,8 +209,7 @@ static void in_received_handler(DictionaryIterator* received, void* context)
     return;
   }
   StateChanges changes = handle_packet(tuple->value->data, tuple->length);
-  if (changes != 0)
-    app_handle_gamestate(changes);
+  app_handle_gamestate(changes);
 }
 
 void communication_init()

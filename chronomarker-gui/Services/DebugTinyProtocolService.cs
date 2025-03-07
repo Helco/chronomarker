@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chronomarker.Services;
@@ -95,7 +96,7 @@ internal class DebugTinyProtocolService : IWatchService, InfrequentPacketSchedul
     void InfrequentPacketScheduler.IAdapter.QueueEverything() => protocol?.QueueEverything();
     void InfrequentPacketScheduler.IAdapter.FlushPendingMessages() => protocol?.FlushPendingMessages();
 
-    Task InfrequentPacketScheduler.IAdapter.SendPacket(byte[] packet)
+    Task InfrequentPacketScheduler.IAdapter.SendPacket(byte[] packet, CancellationToken ct)
     {
         packetCount++;
         var sinceLastSecond = stopwatch.Elapsed - lastSecond;

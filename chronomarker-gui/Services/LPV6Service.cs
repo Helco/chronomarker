@@ -61,10 +61,10 @@ internal class LPV6Service : IWatchService
         public void FlushPendingMessages() => Protocol.FlushPendingMessages();
         public void QueueEverything() => Protocol.QueueEverything();
 
-        public Task SendPacket(byte[] packet)
+        public Task SendPacket(byte[] packet, CancellationToken ct)
         {
             if (CanBeUsed)
-                return Characteristic.WriteValueAsync(packet.AsBuffer(), GattWriteOption.WriteWithoutResponse).AsTask();
+                return Characteristic.WriteValueAsync(packet.AsBuffer(), GattWriteOption.WriteWithoutResponse).AsTask(ct);
             return Task.CompletedTask;
         }
     }
@@ -321,11 +321,11 @@ internal class LPV6Service : IWatchService
         catch (OperationCanceledException) { }
     }
 
-    public async Task SendMessage(byte[] message)
+    public async Task SendMessage(byte[] message, CancellationToken ct)
     {
         var connection = currentConnection;
         if (connection?.CanBeUsed is true)
-            await connection.Characteristic.WriteValueAsync(message.AsBuffer(), GattWriteOption.WriteWithoutResponse);
+            await connection.Characteristic.WriteValueAsync(message.AsBuffer(), GattWriteOption.WriteWithoutResponse).AsTask(ct);
     }
 
     protected virtual void Dispose(bool disposing)

@@ -16,6 +16,48 @@ GameState game = {
   .planetGrav = 107,
 };
 
+static void prv_app_status_changed()
+{
+  bool bluetooth = bluetooth_connection_service_peek();
+  if (window_stack_get_top_window() == app.status.window)
+  {
+    app_status_set_status(&app.status, bluetooth, app.hasActiveComm);
+    if (bluetooth && app.hasActiveComm)
+    {
+      window_stack_push(app.main.window, true);
+      vibes_short_pulse();
+    }
+  }
+  else
+  {
+    if (bluetooth && app.hasActiveComm)
+      return;
+    vibes_double_pulse();
+    //window_stack_pop_all(false);
+    window_stack_push(app.status.window, false);
+  }
+}
+
+static void prv_bluetooth_handler(bool connected)
+{
+  prv_app_status_changed();
+}
+
+static void prv_communication_timeout()
+{
+  app.timeoutTimer = NULL;
+  app.hasActiveComm = false;
+  prv_app_status_changed();
+}
+
+static void prv_game_is_active()
+{
+  if (app.timeoutTimer == NULL || !app_timer_reschedule(app.timeoutTimer, COMM_TIMEOUT))
+    app.timeoutTimer = app_timer_register(COMM_TIMEOUT, prv_communication_timeout, NULL);
+  app.hasActiveComm = true;
+  prv_app_status_changed();
+}
+
 static void prv_app_finish_gamealert(void* data);
 
 static void prv_app_next_gamealert()
@@ -28,7 +70,7 @@ static void prv_app_next_gamealert()
     alert_window_handle_alert(&app.alert, curAlert);
   else
     main_window_handle_alert(&app.main, curAlert);
-  //vibes_long_pulse();
+  vibes_long_pulse();
 }
 
 static void prv_app_finish_gamealert(void* data)
@@ -48,6 +90,14 @@ static void prv_app_finish_gamealert(void* data)
 
 void app_handle_gamealert(const GameAlert* alert)
 {
+  Window* topWindow = window_stack_get_top_window();
+  if (topWindow == app.status.window)
+  {
+    prv_game_is_active();
+    return;
+  }
+  prv_game_is_active();
+
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert %d: %s, %s", alert->icon, alert->title, alert->subtitle);
   if (app.alertCount >= MAX_ALERTS)
   {
@@ -65,6 +115,13 @@ void app_handle_gamealert(const GameAlert* alert)
 void app_handle_gamestate(StateChanges changes)
 {
   Window* topWindow = window_stack_get_top_window();
+  if (topWindow == app.status.window)
+  {
+    prv_game_is_active();
+    return;
+  }
+  prv_game_is_active();
+
   Window* supposedWindow = game.playerFlags & PLAYER_IS_SCANNING
     ? app.scan.window : app.main.window;
   if (topWindow != supposedWindow)
@@ -92,9 +149,12 @@ static void prv_init(void) {
   app_status_set_status(&app.status, true, false);
 
   communication_init();
+  bluetooth_connection_service_subscribe(prv_bluetooth_handler);
+  prv_communication_timeout();
 }
 
 static void prv_deinit(void) {
+  bluetooth_connection_service_unsubscribe();
   app_status_window_destroy(&app.status);
   main_window_destroy(&app.main);
   scan_window_destroy(&app.scan);

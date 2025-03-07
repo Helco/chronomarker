@@ -35,6 +35,9 @@ internal abstract class PebbleService : IWatchService
         public required NetPebble.Transports.ITransport Transport { get; init; }
         public DateTime LastHeartbeat { get; private set; } = DateTime.UtcNow;
         public TimeSpan TimeSinceHeartbeat => DateTime.UtcNow - LastHeartbeat;
+        public DateTime MyLastHeartbeat { get; private set; } = DateTime.UtcNow;
+        public TimeSpan TimeSinceMyHeartbeat => DateTime.UtcNow - MyLastHeartbeat;
+        public static readonly TimeSpan MyHeartbeat = TimeSpan.FromSeconds(10);
 
         public TinyProtocol Protocol { get; }
         public InfrequentPacketScheduler Scheduler { get; }
@@ -45,6 +48,21 @@ internal abstract class PebbleService : IWatchService
             Scheduler = new(this, logService);
             Protocol = new(logService, Scheduler.QueuePacket);
             Protocol.HandleWatchMessage([1, 0]);
+            Task.Run(HeartbeatLoop);
+        }
+
+        private async Task HeartbeatLoop()
+        {
+            while (!Cancellation.IsCancellationRequested)
+            {
+                await Task.Delay(MyHeartbeat, Cancellation.Token);
+                MyLastHeartbeat = DateTime.UtcNow;
+                if (!Cancellation.IsCancellationRequested)
+                {
+                    if (!Protocol.FlushPendingMessages())
+                        Protocol.Heartbeat();
+                }
+            }
         }
 
         public void MarkHeartbeat() => LastHeartbeat = DateTime.UtcNow;
@@ -72,7 +90,7 @@ internal abstract class PebbleService : IWatchService
         public void FlushPendingMessages() => Protocol.FlushPendingMessages();
         public void QueueEverything() => Protocol.QueueEverything();
 
-        public Task SendPacket(byte[] packet)
+        public Task SendPacket(byte[] packet, CancellationToken ct)
         {
             if (CanBeUsed)
             {
@@ -80,7 +98,7 @@ internal abstract class PebbleService : IWatchService
                     unchecked(transactionId++),
                     AppGuid,
                     [new NetPebble.Protocol.AppMessageByteArray(16, packet)]);
-                return Transport.Send(pebbleMessage, ct: default);
+                return Transport.Send(pebbleMessage, ct);
             }
             return Task.CompletedTask;
         }
@@ -138,8 +156,10 @@ internal abstract class PebbleService : IWatchService
                 cancellation?.Cancel();
                 runTask?.Wait(TimeSpan.FromSeconds(3));
                 cancellation?.Dispose();
+                currentConnection?.Dispose();
             }
             catch (Exception) { }
+            currentConnection = null;
             cancellation = null;
             runTask = null;
             Status = WatchStatus.Initial;
@@ -268,7 +288,7 @@ internal abstract class PebbleService : IWatchService
                 logMessage("Connected");
                 token.Register(connection.Cancellation.Cancel);
                 //_ = Task.Run(() => TaskTimeout(connection));
-                await connection.Completion.Task;
+                await connection.Completion.Task.WaitAsync(token);
                 HandleDisconnect(connection, "Unknown disconnection event");
             }
         }
