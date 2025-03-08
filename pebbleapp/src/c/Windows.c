@@ -70,7 +70,7 @@ void main_window_handle_gamestate(MainWindow* m, StateChanges changes)
 {
     if (changes & STATE_O2CO2)
         o2co2_set_values(&m->o2co2, game.o2, game.co2);
-    if (changes & STATE_TIME)
+    if (changes & (STATE_TIME | STATE_PLANETSTATS | STATE_PLAYERFLAGS))
         planet_set_time(&m->planet, game.bodyType == BODY_SHIP ? SPACE_TIME : game.time);
     if (changes & STATE_PERSONALEFFECTS)
     {
@@ -217,7 +217,7 @@ void scan_window_handle_gamestate(ScanWindow* scan, StateChanges changes)
     {
         o2co2_set_values(&scan->o2co2, game.o2, game.co2);
     }
-    if (changes & STATE_TIME)
+    if (changes & (STATE_TIME | STATE_PLANETSTATS | STATE_PLAYERFLAGS))
     {
         planet_set_time(&scan->planet, game.bodyType == BODY_SHIP ? SPACE_TIME : game.time);
     }
@@ -289,9 +289,13 @@ static void prv_alert_window_appear(Window* window)
 void alert_window_handle_alert(AlertWindow* aw, const GameAlert* alert)
 {
     if (alert == NULL && window_stack_get_top_window() == aw->window)
+    {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Closing alert window");
         window_stack_pop(true);
+    }
     else if (alert != NULL)
     {
+        APP_LOG(APP_LOG_LEVEL_DEBUG, "Open alert window");
         aw->alert = alert;
         window_stack_push(aw->window, true);
     }

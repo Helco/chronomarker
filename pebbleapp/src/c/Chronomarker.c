@@ -24,6 +24,7 @@ static void prv_app_status_changed()
     app_status_set_status(&app.status, bluetooth, app.hasActiveComm);
     if (bluetooth && app.hasActiveComm)
     {
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Good status, pushing main window");
       window_stack_push(app.main.window, true);
       vibes_short_pulse();
     }
@@ -32,8 +33,9 @@ static void prv_app_status_changed()
   {
     if (bluetooth && app.hasActiveComm)
       return;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Bad status, resetting to status");
     vibes_double_pulse();
-    //window_stack_pop_all(false);
+    window_stack_pop_all(false);
     window_stack_push(app.status.window, false);
   }
 }
@@ -114,6 +116,7 @@ void app_handle_gamealert(const GameAlert* alert)
 
 void app_handle_gamestate(StateChanges changes)
 {
+  // Are we in the game at all?
   Window* topWindow = window_stack_get_top_window();
   if (topWindow == app.status.window)
   {
@@ -121,17 +124,24 @@ void app_handle_gamestate(StateChanges changes)
     return;
   }
   prv_game_is_active();
-
-  Window* supposedWindow = game.playerFlags & PLAYER_IS_SCANNING
-    ? app.scan.window : app.main.window;
-  if (topWindow != supposedWindow)
+  
+  // Handle scanning flag
+  if (game.playerFlags & PLAYER_IS_SCANNING)
   {
-    if (topWindow != app.main.window)
-      window_stack_pop(true);
-    else
-      window_stack_push(supposedWindow, true);
+    if (topWindow == app.main.window)
+    {
+      APP_LOG(APP_LOG_LEVEL_DEBUG, "Scanning and not in alert, pushing scan window");
+      window_stack_push(app.scan.window, true);
+    }
   }
-  else if (topWindow == app.main.window)
+  else if (topWindow == app.scan.window)
+  {
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "No longer scanning");
+    window_stack_pop(true);
+  }
+
+  // Passing gamestate change event
+  if (topWindow == app.main.window)
     main_window_handle_gamestate(&app.main, changes);
   else if (topWindow == app.scan.window)
     scan_window_handle_gamestate(&app.scan, changes);

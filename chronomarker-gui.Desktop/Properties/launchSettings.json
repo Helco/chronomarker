@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Chronomarker Real": {
+      "commandName": "Project"
+    },
+    "Chronomarker MockGame": {
+      "commandName": "Project",
+      "commandLineArgs": "--mock-game\r\n"
+    }
+  }
+}

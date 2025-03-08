@@ -110,7 +110,7 @@ void o2co2_set_values(O2CO2Layer* layer, uint8_t o2, uint8_t co2)
     layer->co2Path.points = layer->points + o2 * 2;
     layer->co2Path.num_points = co2 * 2;
 
-    layer_mark_dirty(layer->layer);
+    if (layer->layer != NULL) layer_mark_dirty(layer->layer);
 }
 
 static void prv_o2co2_draw(struct Layer *layerPbl, GContext* ctx)
@@ -227,11 +227,12 @@ void effect_icon_create_big(EffectIconLayer* layer, Layer* parentLayer, bool dow
 void effect_icon_destroy(EffectIconLayer* layer)
 {
     layer_destroy(layer->layer);
+    layer->layer = NULL;
 }
 
 void effect_icon_set_icon(EffectIconLayer* layer, EffectIcon newIcon)
 {
-    if (layer->icon == newIcon)
+    if (layer->icon == newIcon || layer->layer == NULL)
         return;
     layer->icon = newIcon;
     layer_set_hidden(layer->layer, newIcon == EFFECT_ICON_NONE);
@@ -328,11 +329,12 @@ void curved_text_destroy(CurvedTextLayer* layer)
     for (int i = 0; i < MAX_BODY_LENGTH + 1; i++)
         gbitmap_destroy(layer->charBitmaps[i]);
     layer_destroy(layer->layer);
+    layer->layer = NULL;
 }
 
 void curved_text_set_text(CurvedTextLayer* layer, const char* text)
 {
-    if (strncmp(layer->text, text, MAX_BODY_LENGTH) == 0)
+    if (strncmp(layer->text, text, MAX_BODY_LENGTH) == 0 || layer->layer == NULL)
         return;
     layer->charCount = strlen(text);
     if (layer->charCount > MAX_BODY_LENGTH)
@@ -522,12 +524,13 @@ void planet_create(PlanetLayer* layer, bool big, Layer* parentLayer)
 void planet_destroy(PlanetLayer* layer)
 {
     layer_destroy(layer->layer);
+    layer->layer = NULL;
 }
 
 void planet_set_time(PlanetLayer* layer, int time)
 {
     ASSERT((time >= 0 && time < (1 << BITS_TIME)) || time == SPACE_TIME);
-    if (layer->lastTime == time) return;
+    if (layer->lastTime == time || layer->layer == NULL) return;
     if (time == SPACE_TIME)
     {
         layer->lastTime = SPACE_TIME;
@@ -701,10 +704,12 @@ void alert_background_create(AlertBackgroundLayer* layer, Layer* parentLayer)
 void alert_background_destroy(AlertBackgroundLayer* layer)
 {
     layer_destroy(layer->layer);
+    layer->layer = NULL;
 }
 
 void alert_background_set_color(AlertBackgroundLayer* layer, GColor color)
 {
+    if (layer == NULL || layer->layer == NULL) return;
     *(GColor*)layer_get_data(layer->layer) = color;
     layer_mark_dirty(layer->layer);
 }

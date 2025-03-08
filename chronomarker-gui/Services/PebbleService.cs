@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Chronomarker.ViewModels;
 using NetPebble.Transports;
 
 namespace Chronomarker.Services;
 
 internal sealed class PebbleDevConnectionService(
-    LogService logService, IGameService gameService, Uri address
-    ) : PebbleService(logService, gameService)
+    LogService logService, IGameService gameService, StatusModel status, Uri address
+    ) : PebbleService(logService, gameService, status)
 {
     protected override ITransport CreateTransport() =>
         new WebsocketTransport(address);
 }
 
 internal sealed class PebbleBLClassicService(
-    LogService logService, IGameService gameService
-    ) : PebbleService(logService, gameService)
+    LogService logService, IGameService gameService, StatusModel status
+    ) : PebbleService(logService, gameService, status)
 {
     protected override ITransport CreateTransport() =>
         new BluetoothClassicTransport();
@@ -43,10 +44,10 @@ internal abstract class PebbleService : IWatchService
         public InfrequentPacketScheduler Scheduler { get; }
         public bool HasPendingMessages => Protocol.HasPendingMessages;
 
-        public Connection(LogService logService)
+        public Connection(LogService logService, StatusModel statusModel)
         {
             Scheduler = new(this, logService);
-            Protocol = new(logService, Scheduler.QueuePacket);
+            Protocol = new(logService, Scheduler.QueuePacket, statusModel);
             Protocol.HandleWatchMessage([1, 0]);
             Task.Run(HeartbeatLoop);
         }
@@ -105,8 +106,10 @@ internal abstract class PebbleService : IWatchService
     }
 
     private readonly LogService logService;
+    private readonly StatusModel statusModel;
     private readonly Action<string> logMessage;
     private readonly object runLock = new();
+    private TinyProtocol? prevProtocol = null; // to pass state across connections
     private Connection? currentConnection = null;
     private CancellationTokenSource? cancellation;
     private Task? runTask;
@@ -129,11 +132,13 @@ internal abstract class PebbleService : IWatchService
 
     public bool PrintWatchLog { get; set; } // non-functional
 
-    public PebbleService(LogService logService, IGameService gameService)
+    public PebbleService(LogService logService, IGameService gameService, StatusModel statusModel)
     {
         this.logService = logService;
+        this.statusModel = statusModel;
         logMessage = logService.Log;
         gameService.OnMessage += HandleMessage;
+        prevProtocol = new TinyProtocol(logService, _ => { }, statusModel);
     }
 
     public void Start()
@@ -195,10 +200,11 @@ internal abstract class PebbleService : IWatchService
             await transport.ConnectAsync(default);
 
             // Connection
-            var connection = new Connection(logService)
+            var connection = new Connection(logService, statusModel)
             {
                 Transport = transport
             };
+            prevProtocol = connection.Protocol;
             return connection;
         }
         catch (Exception ex) when (ex is not ConnectionException)

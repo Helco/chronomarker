@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -12,8 +13,6 @@ namespace Chronomarker;
 
 public partial class App : Application
 {
-    public const bool MockGame = true;
-
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -30,7 +29,8 @@ public partial class App : Application
         collection.AddSingleton<LogService>();
         collection.AddSingleton<ProxyWatchService>();
 
-        if (MockGame)
+        var mockGame = Environment.GetCommandLineArgs().Contains("--mock-game");
+        if (mockGame)
             collection.AddSingleton<IGameService, MockGameService>();
         else
             collection.AddSingleton<IGameService, GameService>();
@@ -40,7 +40,7 @@ public partial class App : Application
         var mv = services.GetRequiredService<MainViewModel>();
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = MockGame
+            desktop.MainWindow = mockGame
                 ? new MockGameWindow { DataContext = mv }
                 : new MainWindow { DataContext = mv };
         }

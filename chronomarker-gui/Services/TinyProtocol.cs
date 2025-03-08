@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Chronomarker.ViewModels;
 
 namespace Chronomarker.Services;
 
@@ -219,9 +220,58 @@ internal class TinyProtocol
 
     public bool HasPendingMessages => queuedMessages.Count > 0;
 
-    public TinyProtocol(LogService logService, QueuePacketHandler queuePacket)
+    public TinyProtocol(LogService logService, QueuePacketHandler queuePacket, TinyProtocol? prevProtocol = null)
     {
         this.logService = logService;
+        this.queuePacket = queuePacket;
+        if (prevProtocol is not null)
+        {
+            o2 = prevProtocol.o2;
+            co2 = prevProtocol.co2;
+            heading = prevProtocol.heading;
+            localTime = prevProtocol.localTime;
+            planetGravity = prevProtocol.planetGravity;
+            planetTemp = prevProtocol.planetTemp;
+            planetOxygen = prevProtocol.planetOxygen;
+            bodyType = prevProtocol.bodyType;
+            playerFlags = prevProtocol.playerFlags;
+            planetName = prevProtocol.planetName;
+            locationName = prevProtocol.locationName;
+            personalEffects = prevProtocol.personalEffects.ToList();
+            envEffects = prevProtocol.envEffects.ToList();
+        }
+    }
+
+    public TinyProtocol(LogService logService, QueuePacketHandler queuePacket, StatusModel status)
+    {
+        this.logService = logService;
+        QueueO2(status.O2 / status.MaxO2CO2, false);
+        QueueCO2(status.CO2 / status.MaxO2CO2, false);
+        QueueLocalTime(status.LocalTime, false);
+        QueuePlayerFlags(
+            default(PlayerFlags) |
+            (status.IsInSpaceship ? PlayerFlags.IsInSpaceship : default) |
+            (status.IsLanded ? PlayerFlags.IsLanded : default) |
+            (status.IsScanning ? PlayerFlags.IsScanning : default),
+            false);
+        QueuePlanetStats(status.Gravity, status.Temperature, status.Oxygen, (uint)status.BodyType, false);
+        QueuePlanetName(status.BodyName, false);
+        QueueLocationName(status.LocationName, false);
+        QueuePersonalEffects([.. new PersonalEffectType?[] {
+            status.HasCardioEffect ? PersonalEffectType.Cardio : null,
+            status.HasSkeletalEffect ? PersonalEffectType.Skeletal : null,
+            status.HasNervousEffect ? PersonalEffectType.Nervous : null,
+            status.HasDigestiveEffect ? PersonalEffectType.Digestive : null,
+            status.HasMiscEffect ? PersonalEffectType.Misc : null,
+        }.Where(s => s != null).Select(s => s!.Value)], false);
+        QueueEnvEffects([.. new EnvEffectType?[] {
+            status.HasRadiationEffect ? EnvEffectType.Radiation : null,
+            status.HasThermalEffect ? EnvEffectType.Thermal : null,
+            status.HasAirborneEffect ? EnvEffectType.Airborne : null,
+            status.HasCorrosiveEffect ? EnvEffectType.Corrosive : null,
+        }.Where(s => s != null).Select(s => s!.Value)], false);
+        bitStream.Clear();
+        queuedMessages.Clear();
         this.queuePacket = queuePacket;
     }
 
@@ -302,7 +352,7 @@ internal class TinyProtocol
         {
             if (bitStream.ByteSize == 0)
                 return false;
-            queuePacket(bitStream.Data);
+            queuePacket?.Invoke(bitStream.Data);
             bitStream.Clear();
             queuedMessages.Clear();
             return true;
@@ -315,7 +365,7 @@ internal class TinyProtocol
         {
             bitStream.Clear();
             AddMessage(ProviderMessage.Nop, () => { });
-            queuePacket(bitStream.Data);
+            queuePacket?.Invoke(bitStream.Data);
             ReconstructPacket();
         }
     }
@@ -341,6 +391,10 @@ internal class TinyProtocol
                 bitStream.Write(planetOxygen, OxygenBits);
                 bitStream.Write(bodyType, BodyTypeBits);
             });
+            if (personalEffects.Any())
+                QueuePersonalEffects(personalEffects, false);
+            if (envEffects.Any())
+                QueueEnvEffects(envEffects, false);
             FlushPendingMessages();
         }
     }
