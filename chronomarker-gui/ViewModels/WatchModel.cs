@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Chronomarker.Services;
 using ReactiveUI;
@@ -40,7 +42,9 @@ internal class WatchModel : ViewModelBase
         WatchType.LPV6 => "<none> (also LPV6 is not supported, how did you get here?)",
         WatchType.PebbleDevConnection => "Pebble App->Settings->Developer Connection->Server IP",
         WatchType.PebbleBLClassic => "Disconnect the Pebble from the phone and pair with PC",
+#if DEBUG
         WatchType.DebugTinyProtocol => "Nothing, this is just for development",
+#endif
         _ => "How did you get here?"
     };
     public bool NeedsAddress => WatchType is WatchType.PebbleDevConnection && !IsRunning;
@@ -87,6 +91,20 @@ internal class WatchModel : ViewModelBase
             proxyWatchService.Start();
         }
         RaiseIsRunningChange();
+    }
+
+    public void OpenHelp()
+    {
+        switch(WatchType)
+        {
+            case WatchType.PebbleBLClassic: OpenUrl(@"https://github.com/Helco/chronomarker/wiki/Getting-started#setup-pebble-without-phone"); break;
+            case WatchType.PebbleDevConnection: OpenUrl(@"https://github.com/Helco/chronomarker/wiki/Getting-started#setup-pebble-with-phone"); break;
+        }
+    }
+
+    private void OpenUrl(string uri)
+    {
+        Process.Start(new ProcessStartInfo(uri) { UseShellExecute = true });
     }
 
     private void RaiseIsRunningChange()

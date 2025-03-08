@@ -42,7 +42,9 @@ internal class ProxyWatchService : IWatchService
                 case WatchType.LPV6: impl = ActivatorUtilities.CreateInstance<LPV6Service>(services); break;
                 case WatchType.PebbleDevConnection: impl = ActivatorUtilities.CreateInstance<PebbleDevConnectionService>(services, address); break;
                 case WatchType.PebbleBLClassic: impl = ActivatorUtilities.CreateInstance<PebbleBLClassicService>(services); break;
+#if DEBUG
                 case WatchType.DebugTinyProtocol: impl = ActivatorUtilities.CreateInstance<DebugTinyProtocolService>(services); break;
+#endif
                 default: throw new NotImplementedException($"Did not implement watch instantiation for {newType}");
             }
             watchType = newType;
