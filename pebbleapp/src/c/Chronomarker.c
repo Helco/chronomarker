@@ -27,6 +27,7 @@ static void prv_app_status_changed()
       APP_LOG(APP_LOG_LEVEL_DEBUG, "Good status, pushing main window");
       window_stack_push(app.main.window, true);
       vibes_short_pulse();
+      light_enable_interaction();
     }
   }
   else
@@ -37,6 +38,7 @@ static void prv_app_status_changed()
     vibes_double_pulse();
     window_stack_pop_all(false);
     window_stack_push(app.status.window, false);
+    light_enable_interaction();
   }
 }
 
@@ -132,12 +134,14 @@ void app_handle_gamestate(StateChanges changes)
     {
       APP_LOG(APP_LOG_LEVEL_DEBUG, "Scanning and not in alert, pushing scan window");
       window_stack_push(app.scan.window, true);
+      light_enable_interaction();
     }
   }
   else if (topWindow == app.scan.window)
   {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "No longer scanning");
     window_stack_pop(true);
+    light_enable_interaction();
   }
 
   // Passing gamestate change event

@@ -95,6 +95,7 @@ void main_window_handle_alert(MainWindow* m, const GameAlert* alert)
     {
         effect_icon_set_icon(&m->alertIcon, alert->icon);
         text_layer_set_text(m->alertText, alert->title);
+        light_enable_interaction();
     }
     layer_set_hidden(text_layer_get_layer(m->alertBackground), alert == NULL);
     layer_set_hidden(text_layer_get_layer(m->alertText), alert == NULL);
@@ -292,12 +293,14 @@ void alert_window_handle_alert(AlertWindow* aw, const GameAlert* alert)
     {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Closing alert window");
         window_stack_pop(true);
+        light_enable_interaction();
     }
     else if (alert != NULL)
     {
         APP_LOG(APP_LOG_LEVEL_DEBUG, "Open alert window");
         aw->alert = alert;
         window_stack_push(aw->window, true);
+        light_enable_interaction();
     }
 }
 
@@ -337,7 +340,7 @@ static void prv_app_status_window_load(Window* window)
     text_layer_set_text_color(asw->text, GColorBlack);
     text_layer_set_text_alignment(asw->text, GTextAlignmentCenter);
     text_layer_set_font(asw->text, s_profontwindows_big);
-    text_layer_set_text(asw->text, "fuckyou");
+    text_layer_set_text(asw->text, "");
     layer_add_child(window_layer, text_layer_get_layer(asw->text));
     //text_layer_enable_screen_text_flow_and_paging(asw->text, 4);
 }

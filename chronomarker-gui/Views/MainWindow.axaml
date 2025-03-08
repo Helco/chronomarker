@@ -6,7 +6,7 @@
         xmlns:views="clr-namespace:Chronomarker.Views"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="600"
         x:Class="Chronomarker.Views.MainWindow"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/chronomarker-icon.ico"
         Title="Chronomarker"
 		Width="1000" Height="640"
         CanResize="False">
